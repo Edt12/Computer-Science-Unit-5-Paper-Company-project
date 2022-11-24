@@ -9,21 +9,27 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.lang import Builder
 from kivy.core.window import Window
-sm=ScreenManager()
+print("go")
 green = [0, 1, 0, 1] #RGBA values /255
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
 #Creating Sqlite Database
 conn=sqlite3.connect("UsersAndPasswords.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
+print("connected")
 #creates SQlite Database
 cursor.execute("""create table IF NOT EXISTS UsersAndPasswords 
 (Username text
 ,Password text 
 )""")#inside are columns/categorys
+sm=ScreenManager()
 
+class shopfront(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+sm.add_widget(shopfront(name="shopfront"))
 class Login(Screen):#Create different windows class
-    
+   
     def __init__(self,**kwargs):#Instead of using build to intialise use init as build does not work with screen class
         Screen.__init__(self,**kwargs)
     
@@ -49,7 +55,7 @@ class Login(Screen):#Create different windows class
             for row in Table:#goes through every column in UserAndPasswords
                 if row[0]== Username.text and row[1]== Password.text:
                     print("Both Correct")
-                    sm.current="PasswordMenu"
+                    sm.current="shopfront"
 
                 if row[0]== Username.text and row[1]!= Password.text:
                     Password.text==""
@@ -68,16 +74,16 @@ class Login(Screen):#Create different windows class
         self.add_widget(LoginTitle)
         
         def CreatePasswordClick(self):
-            if Username.text != "" and Password.text!="":
                 testUsername="test"
                 testPassword="1234"
-                cursor.execute("INSERT INTO UsersAndPasswords(Username,Password) VALUES (?,?)",(testUsername,testPassword))
+                cursor.execute("INSERT INTO UsersAndPasswords (Username,Password) VALUES (?,?)",(Username.text,Password.text))
+                conn.commit()
                 Username.text=""
                 Password.text=""
         CreatePassword=Button(size_hint=(0.2,0.05),pos_hint={'x':0.7,'y':0.4},text="Create New Password",background_color=green)
         CreatePassword.bind(on_press=CreatePasswordClick)
         self.add_widget(CreatePassword)
-
+        
 
 class PaperApp(App):
     def build(self):
@@ -86,3 +92,6 @@ class PaperApp(App):
         return sm
 
 PaperApp().run()
+cursor.execute("SELECT * From UsersAndPasswords")
+test=cursor.fetchall()
+print(test)
