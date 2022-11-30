@@ -9,14 +9,24 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.lang import Builder
 from kivy.core.window import Window
-print("go")
+
 green = [0, 1, 0, 1] #RGBA values /255
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
+
+
+ProductPos_hintX=0.0
+ProductPos_hintY=0.0
+ProductNumber=0
+
 #Creating Sqlite Database
 conn=sqlite3.connect("UsersAndPasswords.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
-print("connected")
+cursor.execute("""create table IF NOT EXISTS Products(
+Productname,
+ProductPrice
+)""")
+
 #creates SQlite Database
 cursor.execute("""create table IF NOT EXISTS UsersAndPasswords 
 (Username text
@@ -24,10 +34,16 @@ cursor.execute("""create table IF NOT EXISTS UsersAndPasswords
 )""")#inside are columns/categorys
 sm=ScreenManager()
 
-class shopfront(Screen):
+
+
+class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-sm.add_widget(shopfront(name="shopfront"))
+        self.layout=FloatLayout
+
+
+sm.add_widget(Shopfront(name="shopfront"))
+    
 class Login(Screen):#Create different windows class
    
     def __init__(self,**kwargs):#Instead of using build to intialise use init as build does not work with screen class
@@ -55,7 +71,34 @@ class Login(Screen):#Create different windows class
             for row in Table:#goes through every column in UserAndPasswords
                 if row[0]== Username.text and row[1]== Password.text:
                     print("Both Correct")
-                    sm.current="shopfront"
+                    cursor.execute("SELECT * from Products")
+                    Table=cursor.fetchall()
+                    for row in Table: 
+                        sm.current="shopfront"
+                        ShopfrontScreen=sm.get_screen("shopfront")
+
+                        global ProductPos_hintX
+                        global ProductPos_hintY
+                        global ProductNumber
+                        ProductName=row[0]
+                        #work out which where button is in title 
+                        cursor.execute("SELECT * from Products")
+                    
+                    
+                        print(cursor.fetchall())
+                        def ProductPress(self):
+                            print("steve")
+
+                        IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
+                        IndividualProduct.bind(on_press=ProductPress)
+                        ShopfrontScreen.add_widget(IndividualProduct)
+                        ProductPos_hintX+=0.2
+                        ProductNumber+=1
+
+                        ProductNumber_DividedBy5=ProductNumber/5
+                        if ProductNumber_DividedBy5.is_integer():#is integer checks whether something is integer
+                            ProductPos_hintX=0
+                            ProductPos_hintY+=0.1
 
                 if row[0]== Username.text and row[1]!= Password.text:
                     Password.text==""
@@ -74,8 +117,6 @@ class Login(Screen):#Create different windows class
         self.add_widget(LoginTitle)
         
         def CreatePasswordClick(self):
-                testUsername="test"
-                testPassword="1234"
                 cursor.execute("INSERT INTO UsersAndPasswords (Username,Password) VALUES (?,?)",(Username.text,Password.text))
                 conn.commit()
                 Username.text=""
@@ -89,7 +130,7 @@ class PaperApp(App):
     def build(self):
         sm.add_widget(Login(name="Login"))
         sm.current="Login"
-        return sm
+        return sm 
 
 PaperApp().run()
 cursor.execute("SELECT * From UsersAndPasswords")
