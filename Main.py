@@ -18,13 +18,20 @@ Black=[0,0,0,1]
 ProductPos_hintX=0.0
 ProductPos_hintY=0.0
 ProductNumber=0
-
+Quantity=0
 #Creating Sqlite Database
-conn=sqlite3.connect("UsersAndPasswords.db")#connects to database 
+conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
 cursor.execute("""create table IF NOT EXISTS Products(
-Productname,
-ProductPrice
+Productname text
+,ProductPrice text
+)""")
+
+cursor=conn.cursor()#adds connection to cursor
+cursor.execute("""create table IF NOT EXISTS Basket(
+Productname text
+,ProductPrice text
+,Quantity text
 )""")
 
 #creates SQlite Database
@@ -32,14 +39,12 @@ cursor.execute("""create table IF NOT EXISTS UsersAndPasswords
 (Username text
 ,Password text 
 )""")#inside are columns/categorys
+
 sm=ScreenManager()
-
-
-
 class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout=FloatLayout
+        self.layout=FloatLayout()
 
 
 sm.add_widget(Shopfront(name="shopfront"))
@@ -73,6 +78,7 @@ class Login(Screen):#Create different windows class
                     print("Both Correct")
                     cursor.execute("SELECT * from Products")
                     Table=cursor.fetchall()
+                    print(Table)
                     for row in Table: 
                         sm.current="shopfront"
                         ShopfrontScreen=sm.get_screen("shopfront")
@@ -80,14 +86,34 @@ class Login(Screen):#Create different windows class
                         global ProductPos_hintX
                         global ProductPos_hintY
                         global ProductNumber
+                        
                         ProductName=row[0]
+                        ProductPrice=row[1]
                         #work out which where button is in title 
                         cursor.execute("SELECT * from Products")
                     
-                    
+                        print(ProductName)
                         print(cursor.fetchall())
+
                         def ProductPress(self):
-                            print("steve")
+                            global Quantity
+                            ProductPressed=self.text
+                            Quantity+=1
+                            cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
+                            Search=cursor.fetchall()
+                            print(Search)
+                            if Search==[]:#if item not in basket
+                                Product=self.text#getting title then using it to search the database for its price then adding price to basket
+                                cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
+                                ProductPrice=row[1]
+                                print(ProductPrice)
+                                cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(Product,ProductPrice,Quantity))
+                                conn.commit()
+                                cursor.execute("SELECT * FROM Basket")
+                                cursor.fetchall()
+
+                            if Search!=[]:
+
 
                         IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
                         IndividualProduct.bind(on_press=ProductPress)
@@ -121,6 +147,7 @@ class Login(Screen):#Create different windows class
                 conn.commit()
                 Username.text=""
                 Password.text=""
+
         CreatePassword=Button(size_hint=(0.2,0.05),pos_hint={'x':0.7,'y':0.4},text="Create New Password",background_color=green)
         CreatePassword.bind(on_press=CreatePasswordClick)
         self.add_widget(CreatePassword)
@@ -131,8 +158,9 @@ class PaperApp(App):
         sm.add_widget(Login(name="Login"))
         sm.current="Login"
         return sm 
-
 PaperApp().run()
 cursor.execute("SELECT * From UsersAndPasswords")
 test=cursor.fetchall()
+cursor.execute("Drop table Basket;")#because basket is temporary delete table at end
+cursor.close()
 print(test)
