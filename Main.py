@@ -119,16 +119,7 @@ class Login(Screen):#Create different windows class
         LoginTitle=Label(text="Please Enter Your Username and Password",size_hint=(0.1,0.05),pos_hint={'x':0.5,'y':0.6},color=Black)
         self.add_widget(LoginTitle)
         
-        def CreatePasswordClick(self):
-                cursor.execute("INSERT INTO UsersAndPasswords (Username,Password) VALUES (?,?)",(Username.text,Password.text))
-                conn.commit()
-                Username.text=""
-                Password.text=""
-
-        CreatePassword=Button(size_hint=(0.2,0.05),pos_hint={'x':0.7,'y':0.4},text="Create New Password",background_color=green)
-        CreatePassword.bind(on_press=CreatePasswordClick)
-        self.add_widget(CreatePassword)
-        
+    
 
 
 
