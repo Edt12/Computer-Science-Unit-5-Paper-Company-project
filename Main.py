@@ -17,16 +17,31 @@ Black=[0,0,0,1]
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
+sm=ScreenManager()
 
 
 class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
+        def ViewBasketClick(self):
 
+            sm.current="ViewBasket"
+            Table=cursor.execute("Select * From Basket")
 
-sm=ScreenManager()
-    
+            for row in Table:
+                Product=Label(text=str(Table),size_hint=(0.2,0.1))
+                Shopfront.add_widget(Product)
+
+        Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.1,'y':0.9},text=str("ViewBasket"),background_color=green,color=Black)
+        Viewbasket.bind(on_press=ViewBasketClick)
+
+        self.add_widget(Viewbasket)
+class ViewBasket(Screen):
+    def __init__(self, **kwargs):
+         super().__init__(**kwargs)
+         self.layout=FloatLayout()
+        
 class Login(Screen):#Create different windows class
    
     def __init__(self,**kwargs):#Instead of using build to intialise use init as build does not work with screen class
@@ -78,20 +93,17 @@ class Login(Screen):#Create different windows class
                             ProductPressed=self.text
                             Quantity+=1
                             cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
-                            Search=cursor.fetchall()
-                            print(Search)
-                            if Search==[]:#if item not in basket
-                                Product=self.text#getting title then using it to search the database for its price then adding price to basket
-                                cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
-                                ProductPrice=row[1]
-                                print(ProductPrice)
-                                cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(Product,ProductPrice,Quantity))
-                                conn.commit()
-                                cursor.execute("SELECT * FROM Basket")
-                                cursor.fetchall()
+                            Product=self.text#getting title then using it to search the database for its price then adding price to basket
+                            cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
+                            ProductPrice=row[1]
+                            print(ProductPrice)
+                            cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(Product,ProductPrice,Quantity))
+                            conn.commit()
+                            cursor.execute("SELECT * FROM Basket")
+                            cursor.fetchall()
 
 
-
+ 
                         IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
                         IndividualProduct.bind(on_press=ProductPress)
                         ShopfrontScreen.add_widget(IndividualProduct)
@@ -102,15 +114,16 @@ class Login(Screen):#Create different windows class
                         if ProductNumber_DividedBy5.is_integer():#is integer checks whether something is integer
                             ProductPos_hintX=0
                             ProductPos_hintY+=0.1
-
-                if row[0]== Username.text and row[1]!= Password.text:
-                    Password.text==""
-                    print("incorrect password")
-
-                if row[0]!= Username.text and row[1]== Password.text:
-                    Username.text==""
-                    print("incorrect username")
                     
+            if row[0]== Username.text and row[1]!= Password.text:
+                        print("incorrect")
+                        
+            if row[0]!= Username.text and row[1]== Password.text:
+                        print("incorrect")
+
+            if row[0]!= Username.text and row[1]== Password.text:
+                        print("incorrect")
+                        
             
 
         EnterUsernameandPassword.bind(on_press=LoginClick)
@@ -143,7 +156,7 @@ def main():
     )""")#inside are columns/categorys
 
 
-
+    sm.add_widget(ViewBasket(name="ViewBasket"))
     sm.add_widget(Shopfront(name="shopfront"))
     sm.add_widget(Login(name="Login"))
     sm.current="Login"
