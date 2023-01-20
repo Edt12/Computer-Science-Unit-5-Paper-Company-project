@@ -18,6 +18,21 @@ Black=[0,0,0,1]
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
 sm=ScreenManager()
+class PaymentScreen(Screen):
+    def __init__(self, **kwargs):
+         super().__init__(**kwargs)
+         self.layout=FloatLayout()
+                 
+class ViewBasket(Screen):
+    def __init__(self, **kwargs):
+         super().__init__(**kwargs)
+         self.layout=FloatLayout()
+         CheckoutAndPay=Button(size_hint=(0.2,0.1),pos_hint={'x':0.1,'y':0.9},text=str("ViewBasket"),background_color=green,color=Black)
+         def CheckoutAndPayClick():
+            sm.current="PaymentScreen"
+        
+            CheckoutAndPay.bind(on_press=CheckoutAndPayClick)        
+            self.add_widget(CheckoutAndPay)
 
 
 class Shopfront(Screen):
@@ -25,22 +40,18 @@ class Shopfront(Screen):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
         def ViewBasketClick(self):
-
             sm.current="ViewBasket"
-            Table=cursor.execute("Select * From Basket")
+            ViewBasketScreen=sm.get_screen("ViewBasket")
 
-            for row in Table:
-                Product=Label(text=str(Table),size_hint=(0.2,0.1))
-                Shopfront.add_widget(Product)
-
+            cursor.execute("Select * From Basket")
+            Table=cursor.fetchall()
+            Product=Label(text=str(Table),size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5})
+            ViewBasketScreen.add_widget(Product)
+            
         Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.1,'y':0.9},text=str("ViewBasket"),background_color=green,color=Black)
         Viewbasket.bind(on_press=ViewBasketClick)
 
         self.add_widget(Viewbasket)
-class ViewBasket(Screen):
-    def __init__(self, **kwargs):
-         super().__init__(**kwargs)
-         self.layout=FloatLayout()
         
 class Login(Screen):#Create different windows class
    
