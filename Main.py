@@ -32,6 +32,38 @@ class PaymentScreen(Screen):
         Back.bind(on_press=BackClick)
         self.add_widget(Back)
 
+        CardNumber=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Card Number")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(CardNumber)
+        
+        ExpirationDate=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Expiration Date")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(ExpirationDate)
+
+        SecurityCode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Security Code")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(SecurityCode)
+
+        BillingAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Billing Address")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(BillingAddress)
+
+        BillingAddressLine2=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="BillingAddress Line 2")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(BillingAddressLine2)
+
+        Country=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Country")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(Country)
+
+        Postcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Postcode")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(Postcode)
+
+        EmailAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Email Address")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(EmailAddress)
+
+
+        DeliveryAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Delivery Address")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(DeliveryAddress)
+
+
+        DeliveryPostcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Delivery Postcode")#creates Input box called username,on size_hint first value is length second is width
+        self.add_widget(DeliveryPostcode)
+
 class ViewBasket(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
