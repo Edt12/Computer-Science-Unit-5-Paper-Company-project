@@ -10,59 +10,78 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.lang import Builder
 from kivy.core.window import Window
 
-green = [0, 1, 0, 1] #RGBA values /255
+green = [0, 1, 0, 1] #RGBA values /255 
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
 
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
-sm=ScreenManager()
+Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
 class PaymentScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.layout=FloatLayout()
+        self.layout=FloatLayout()#Float Layout is a layout in which widgets by defualt are not postioned
 
-        PaymentScreenTitle=Label(text="Payment Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
+        PaymentScreenTitle=Label(text="Payment Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)#Size_hint is size relative to screen size pos_hint is position relative to screen size e.g 0.1=one tenth
         self.add_widget(PaymentScreenTitle)
 
         Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
         def BackClick(self):
-            sm.current="Shopfront"
-        Back.bind(on_press=BackClick)
+            Screenmanager.current="Shopfront"
+        Back.bind(on_press=BackClick)#binds a function to happen when a button is pressed
         self.add_widget(Back)
 
-        CardNumber=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Card Number")#creates Input box called username,on size_hint first value is length second is width
+        CardNumber=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.8},text="Card Number")
         self.add_widget(CardNumber)
         
-        ExpirationDate=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Expiration Date")#creates Input box called username,on size_hint first value is length second is width
+        ExpirationDate=TextInput(size_hint=(0.1,0.05),pos_hint={'x':0.5,'y':0.7},text="Expiration Date")
         self.add_widget(ExpirationDate)
 
-        SecurityCode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Security Code")#creates Input box called username,on size_hint first value is length second is width
+        SecurityCode=TextInput(size_hint=(0.1,0.05),pos_hint={'x':0.4,'y':0.7},text="Security Code")
         self.add_widget(SecurityCode)
 
-        BillingAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Billing Address")#creates Input box called username,on size_hint first value is length second is width
+        BillingAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.6},text="Billing Address")
         self.add_widget(BillingAddress)
 
-        BillingAddressLine2=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="BillingAddress Line 2")#creates Input box called username,on size_hint first value is length second is width
+        BillingAddressLine2=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Billing Address Line 2")
         self.add_widget(BillingAddressLine2)
 
-        Country=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Country")#creates Input box called username,on size_hint first value is length second is width
+        Country=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.4},text="Country")
         self.add_widget(Country)
 
-        Postcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Postcode")#creates Input box called username,on size_hint first value is length second is width
+        Postcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.3},text="Postcode")
         self.add_widget(Postcode)
 
-        EmailAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Email Address")#creates Input box called username,on size_hint first value is length second is width
+        EmailAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.2},text="Email Address")
         self.add_widget(EmailAddress)
 
 
-        DeliveryAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Delivery Address")#creates Input box called username,on size_hint first value is length second is width
+        DeliveryAddress=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.1},text="Delivery Address")
         self.add_widget(DeliveryAddress)
 
 
-        DeliveryPostcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5},text="Delivery Postcode")#creates Input box called username,on size_hint first value is length second is width
+        DeliveryPostcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.0},text="Delivery Postcode")
         self.add_widget(DeliveryPostcode)
+
+        RememberButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.7},text="Remember my Payment information",background_color=green,color=Black)
+        self.add_widget(RememberButton)
+
+        PayButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.8},text="Pay",background_color=green,color=Black)
+        def PayButtonClick(self):
+            CardNumber.text=""
+            SecurityCode.text=""
+            ExpirationDate.text=""
+            BillingAddress.text=""
+            BillingAddressLine2.text=""
+            Country.text=""
+            Postcode.text=""
+            EmailAddress.text=""
+            DeliveryAddress.text=""
+            DeliveryPostcode.text=""
+        PayButton.bind(on_press=PayButtonClick)   
+        self.add_widget(PayButton)
+
 
 class ViewBasket(Screen):
     def __init__(self, **kwargs):
@@ -73,14 +92,14 @@ class ViewBasket(Screen):
 
         CheckoutAndPay=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text=str("Checkout and Pay"),background_color=green,color=Black)
         def CheckoutAndPayClick(self):
-            sm.current="PaymentScreen"
+            Screenmanager.current="PaymentScreen"
         
         CheckoutAndPay.bind(on_press=CheckoutAndPayClick)        
         self.add_widget(CheckoutAndPay)
         
         Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
         def BackClick(self):
-            sm.current="Shopfront"
+            Screenmanager.current="Shopfront"
         Back.bind(on_press=BackClick)
         self.add_widget(Back)
 
@@ -92,20 +111,22 @@ class Shopfront(Screen):
         self.add_widget(ShopfrontTitle)
 
         def ViewBasketClick(self):
-            sm.current="ViewBasket"
-            ViewBasketScreen=sm.get_screen("ViewBasket")
+            Screenmanager.current="ViewBasket"
+            ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
         
             cursor.execute("Select * From Basket")
             Table=cursor.fetchall()
             Product=Label(text=str(Table),size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
             ViewBasketScreen.add_widget(Product)
             
-          
-
+        
         Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
         Viewbasket.bind(on_press=ViewBasketClick)
-
         self.add_widget(Viewbasket)
+
+    
+
+       
         
 class Login(Screen):#Create different windows class
    
@@ -134,16 +155,16 @@ class Login(Screen):#Create different windows class
             ProductPos_hintY=0.0
             ProductNumber=0
           
-            for row in Table:#goes through every column in UserAndPasswords
-                if row[0]== Username.text and row[1]== Password.text:
-                    print("Both Correct")
+            for row in Table:#goes through every row in UserAndPasswords
+                if row[0]== Username.text and row[1]== Password.text:#rows in sqlite can be referenced through a list e.g row 0 is first column ,row 1 is second column
+                    print("Both Correct")#Username.text and Password.text are text from login input boxes
                     cursor.execute("SELECT * from Products")
                     Table=cursor.fetchall()
                     print(Table)
                     for row in Table: 
-                        sm.current="Shopfront"
+                        Screenmanager.current="Shopfront"
                         print("steve")
-                        ShopfrontScreen=sm.get_screen("Shopfront")
+                        ShopfrontScreen=Screenmanager.get_screen("Shopfront")#get screen grabs an instance of a screen and is used to place widgets on different screens
 
                         ProductName=row[0]
                         ProductPrice=row[1]
@@ -220,14 +241,14 @@ def main():
     ,Password text 
     )""")#inside are columns/categorys
 
-    sm.add_widget(PaymentScreen(name="PaymentScreen"))
-    sm.add_widget(ViewBasket(name="ViewBasket"))
-    sm.add_widget(Shopfront(name="Shopfront"))
-    sm.add_widget(Login(name="Login"))
-    sm.current="Login"
-    class PaperApp(App):
+    Screenmanager.add_widget(PaymentScreen(name="PaymentScreen"))#adds each screen to screenmanager to so they can be controlled
+    Screenmanager.add_widget(ViewBasket(name="ViewBasket"))
+    Screenmanager.add_widget(Shopfront(name="Shopfront"))
+    Screenmanager.add_widget(Login(name="Login"))
+    Screenmanager.current="Login"
+    class PaperApp(App):#app class contains screenmanager
         def build(self):
-            return sm 
+            return Screenmanager 
 
     PaperApp().run()
 
