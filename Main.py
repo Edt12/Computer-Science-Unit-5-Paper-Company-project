@@ -20,35 +20,57 @@ cursor=conn.cursor()#adds connection to cursor
 sm=ScreenManager()
 class PaymentScreen(Screen):
     def __init__(self, **kwargs):
-         super().__init__(**kwargs)
-         self.layout=FloatLayout()
-                 
+        super().__init__(**kwargs)
+        self.layout=FloatLayout()
+
+        PaymentScreenTitle=Label(text="Payment Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
+        self.add_widget(PaymentScreenTitle)
+
+        Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
+        def BackClick(self):
+            sm.current="Shopfront"
+        Back.bind(on_press=BackClick)
+        self.add_widget(Back)
+
 class ViewBasket(Screen):
     def __init__(self, **kwargs):
-         super().__init__(**kwargs)
-         self.layout=FloatLayout()
-         CheckoutAndPay=Button(size_hint=(0.2,0.1),pos_hint={'x':0.1,'y':0.9},text=str("ViewBasket"),background_color=green,color=Black)
-         def CheckoutAndPayClick():
+        super().__init__(**kwargs)
+        self.layout=FloatLayout()
+        ViewBasketTitle=Label(text="Basket View Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
+        self.add_widget(ViewBasketTitle)
+
+        CheckoutAndPay=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text=str("Checkout and Pay"),background_color=green,color=Black)
+        def CheckoutAndPayClick(self):
             sm.current="PaymentScreen"
         
-            CheckoutAndPay.bind(on_press=CheckoutAndPayClick)        
-            self.add_widget(CheckoutAndPay)
-
+        CheckoutAndPay.bind(on_press=CheckoutAndPayClick)        
+        self.add_widget(CheckoutAndPay)
+        
+        Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
+        def BackClick(self):
+            sm.current="Shopfront"
+        Back.bind(on_press=BackClick)
+        self.add_widget(Back)
 
 class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
+        ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
+        self.add_widget(ShopfrontTitle)
+
         def ViewBasketClick(self):
             sm.current="ViewBasket"
             ViewBasketScreen=sm.get_screen("ViewBasket")
-
+        
             cursor.execute("Select * From Basket")
             Table=cursor.fetchall()
-            Product=Label(text=str(Table),size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5})
+            Product=Label(text=str(Table),size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
             ViewBasketScreen.add_widget(Product)
             
-        Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.1,'y':0.9},text=str("ViewBasket"),background_color=green,color=Black)
+          
+
+        Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
         Viewbasket.bind(on_press=ViewBasketClick)
 
         self.add_widget(Viewbasket)
@@ -87,9 +109,9 @@ class Login(Screen):#Create different windows class
                     Table=cursor.fetchall()
                     print(Table)
                     for row in Table: 
-                        sm.current="shopfront"
+                        sm.current="Shopfront"
                         print("steve")
-                        ShopfrontScreen=sm.get_screen("shopfront")
+                        ShopfrontScreen=sm.get_screen("Shopfront")
 
                         ProductName=row[0]
                         ProductPrice=row[1]
@@ -166,9 +188,9 @@ def main():
     ,Password text 
     )""")#inside are columns/categorys
 
-
+    sm.add_widget(PaymentScreen(name="PaymentScreen"))
     sm.add_widget(ViewBasket(name="ViewBasket"))
-    sm.add_widget(Shopfront(name="shopfront"))
+    sm.add_widget(Shopfront(name="Shopfront"))
     sm.add_widget(Login(name="Login"))
     sm.current="Login"
     class PaperApp(App):
@@ -177,10 +199,8 @@ def main():
 
     PaperApp().run()
 
-    cursor.execute("SELECT * From UsersAndPasswords")
-    test=cursor.fetchall()
+
     cursor.execute("Drop table Basket;")#because basket is temporary delete table at end
     cursor.close()
-    print(test)
 
 main()
