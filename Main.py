@@ -109,6 +109,7 @@ class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
+        
         ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ShopfrontTitle)
 
@@ -131,19 +132,19 @@ class Shopfront(Screen):
 
        
         
-class Login(Screen):#Create different windows class
+class Login(Screen):
    
-    def __init__(self,**kwargs):#Instead of using build to intialise use init as build does not work with screen class
+    def __init__(self,**kwargs):
         Screen.__init__(self,**kwargs)
     
         Window.clearcolor =(Grey)#sets background color for window to get value take each rgb value and divide by 255
 
-        self.layout=FloatLayout()#float layout allows you to place widgets anywhere
+        self.layout=FloatLayout()
 
-        Username=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5})#creates Input box called username,on size_hint first value is length second is width
+        Username=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5})
         self.add_widget(Username)
 
-        Password=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.4})#creates Input box called username,on size_hint first value is length second is width
+        Password=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.4})
         self.add_widget(Password)
 
         EnterUsernameandPassword=Button(size_hint=(0.1,0.05),pos_hint={'x':0.7,'y':0.5},text="Enter",background_color=green)
@@ -171,7 +172,6 @@ class Login(Screen):#Create different windows class
 
                         ProductName=row[0]
                         ProductPrice=row[1]
-                        #work out which where button is in title 
                         cursor.execute("SELECT * from Products")
                     
                         print(ProductName)
@@ -226,6 +226,7 @@ class Login(Screen):#Create different windows class
 
 
 def main():
+    #payment information table will be added in future
     cursor.execute("""create table IF NOT EXISTS Products(
     Productname text
     ,ProductPrice text
