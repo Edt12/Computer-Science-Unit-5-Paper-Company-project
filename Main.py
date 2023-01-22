@@ -13,7 +13,7 @@ from kivy.core.window import Window
 green = [0, 1, 0, 1] #RGBA values /255 
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
-
+#Note this protype currently only covers the customer user type in future manager and employee functions will be added
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
@@ -26,7 +26,7 @@ class PaymentScreen(Screen):
         PaymentScreenTitle=Label(text="Payment Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)#Size_hint is size relative to screen size pos_hint is position relative to screen size e.g 0.1=one tenth
         self.add_widget(PaymentScreenTitle)
 
-        Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
+        Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)#color is writing color background color is background
         def BackClick(self):
             Screenmanager.current="Shopfront"
         Back.bind(on_press=BackClick)#binds a function to happen when a button is pressed
@@ -65,6 +65,7 @@ class PaymentScreen(Screen):
         self.add_widget(DeliveryPostcode)
 
         RememberButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.7},text="Remember my Payment information",background_color=green,color=Black)
+        #in future a function which reads all the numbers into a database will be added
         self.add_widget(RememberButton)
 
         PayButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.8},text="Pay",background_color=green,color=Black)
@@ -81,6 +82,7 @@ class PaymentScreen(Screen):
             DeliveryPostcode.text=""
         PayButton.bind(on_press=PayButtonClick)   
         self.add_widget(PayButton)
+        #help button will be added later
 
 
 class ViewBasket(Screen):
@@ -102,7 +104,7 @@ class ViewBasket(Screen):
             Screenmanager.current="Shopfront"
         Back.bind(on_press=BackClick)
         self.add_widget(Back)
-
+        #help button will be added later
 class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -113,7 +115,7 @@ class Shopfront(Screen):
         def ViewBasketClick(self):
             Screenmanager.current="ViewBasket"
             ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
-        
+            #In future need to add some way of getting the quantity of a specific item and removing the previous label if more items are added to basket after someone has already pressed viewbasket
             cursor.execute("Select * From Basket")
             Table=cursor.fetchall()
             Product=Label(text=str(Table),size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
@@ -124,7 +126,8 @@ class Shopfront(Screen):
         Viewbasket.bind(on_press=ViewBasketClick)
         self.add_widget(Viewbasket)
 
-    
+            #help button will be added later
+
 
        
         
@@ -155,7 +158,7 @@ class Login(Screen):#Create different windows class
             ProductPos_hintY=0.0
             ProductNumber=0
           
-            for row in Table:#goes through every row in UserAndPasswords
+            for row in Table:#goes through every row in UserAndPasswords Table
                 if row[0]== Username.text and row[1]== Password.text:#rows in sqlite can be referenced through a list e.g row 0 is first column ,row 1 is second column
                     print("Both Correct")#Username.text and Password.text are text from login input boxes
                     cursor.execute("SELECT * from Products")
@@ -187,7 +190,7 @@ class Login(Screen):#Create different windows class
                             conn.commit()
                             cursor.execute("SELECT * FROM Basket")
                             cursor.fetchall()
-
+                            
 
  
                         IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
