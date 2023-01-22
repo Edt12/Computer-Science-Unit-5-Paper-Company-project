@@ -1,5 +1,5 @@
 import sqlite3
-from kivy.uix.screenmanager import ScreenManager, Screen,NoTransition #Kivy has screens not pop up windows so screen manage manager different screens think of like switching between virtual desktops
+from kivy.uix.screenmanager import ScreenManager, Screen,NoTransition #Kivy has screens not pop up windows so screen manage manager has different screens think of like switching between virtual desktops
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.label import Label#import widgets such as buttons and labels 
@@ -109,7 +109,7 @@ class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
-        
+
         ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ShopfrontTitle)
 
