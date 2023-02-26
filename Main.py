@@ -19,7 +19,6 @@ green = [0, 1, 0, 1] #RGBA values /255
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
 KeyStore=[]
-#Note this protype currently only covers the customer user type in future manager and employee functions will be added
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
@@ -29,8 +28,7 @@ def GenerateKey(UsernameAndPassword,salt):
     KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2**20,r=8,p=1)
     UsernameAndPassword=str(UsernameAndPassword).encode()   
     Key=base64.urlsafe_b64encode(KeyDerivationFunction.derive(UsernameAndPassword))
-    cipher=Fernet(Key)
-    return cipher
+    return Key
 
 def Encrypt(Data):
      pass
@@ -86,19 +84,23 @@ class Login(Screen):
                         cursor.execute("Select Salt from UsersAndPasswords where Username=(?)",(HexedHashedUsername,))
                         Salt=cursor.fetchone()
                         UsernameAndPassword=HashedPassword.hexdigest()+HashedUsername.hexdigest()
-                        cipher=GenerateKey(UsernameAndPassword,salt=Salt[0])
-                        KeyStore.append(cipher)
+                        Key=GenerateKey(UsernameAndPassword,salt=Salt[0])
+                        cipher=Fernet(Key)
+                        KeyStore.append(Key)
+                        print(Key)
+                        print(KeyStore)
+                        print(KeyStore[0])
                         #defines encrypt and decrypt functions
                         def Decrypt(Data):
                             DecryptedData=cipher.decrypt(Data)
-                            OriginalData=DecryptedData.decode()
-                            return OriginalData
+                            return DecryptedData
                         
                         def Encrypt(Data):
-                            Data=str(Data).encode()
-                            EncryptedData=cipher.encrypt(Data)
+                            Data=str(Data)
+                            DataBytes=bytes(Data, 'utf-8')
+                            EncryptedData=cipher.encrypt(DataBytes)
                             return EncryptedData
-                        
+                        print(Encrypt("steve"))
                         cursor.execute("SELECT * from Products")
                         Table=cursor.fetchall()
                         print(Table)
@@ -212,17 +214,18 @@ class Login(Screen):
 
 
 def Decrypt(Data):
-    cipher=KeyStore[0]
-    print(cipher)
+    Key=KeyStore[0]
+    print(KeyStore[0])
+    cipher=Fernet(Key)
     DecryptedData=cipher.decrypt(Data)
-    OriginalData=DecryptedData.decode()
-    return OriginalData
+    return DecryptedData
                         
 def Encrypt(Data):
-    cipher=KeyStore[0]
-    print(cipher)
-    Data=str(Data).encode()
-    EncryptedData=cipher.encrypt(Data)
+    Key=KeyStore[0]
+    cipher=Fernet(Key)
+    Data=str(Data)
+    DataBytes=bytes(Data,'utf-8')
+    EncryptedData=cipher.encrypt(DataBytes)
     return EncryptedData
                         
 #inputs-Payment Information
@@ -318,18 +321,20 @@ class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
-
+        
         ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ShopfrontTitle)
 
         def ViewBasketClick(self):
             Screenmanager.current="ViewBasket"
             ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
+            print(Encrypt("steve"))
             #In future need to add some way of getting the quantity of a specific item and removing the previous label if more items are added to basket after someone has already pressed viewbasket
             cursor.execute("Select * From Basket")
             Basket=cursor.fetchall()
             for row in Basket:
-                DecryptedRow=Decrypt(row)
+                print(type(row))
+                DecryptedRow=Decrypt(str(row))
                 Product=Label(text=DecryptedRow,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
                 ViewBasketScreen.add_widget(Product)
             
