@@ -25,7 +25,7 @@ cursor=conn.cursor()#adds connection to cursor
 Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
 #generates encryption key using Scrypt
 def GenerateKey(UsernameAndPassword,salt):
-    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2**20,r=8,p=1)
+    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2,r=1,p=1)
     UsernameAndPassword=str(UsernameAndPassword).encode()   
     Key=base64.urlsafe_b64encode(KeyDerivationFunction.derive(UsernameAndPassword))
     return Key
@@ -134,9 +134,11 @@ class Login(Screen):
                                      TempQuantity=cursor.fetchall()
                                      Quantity=TempQuantity[0]
                                      Quantity+=1
-                                     cursor.execute("Update Basket Set Quantity=? Where Productname=?",(Quantity,EncryptedProduct))
+                                     EncryptedQuantity2=Encrypt(Quantity)
+                                     cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProduct))
                                      conn.commit()
 
+                                
                                 else:
                                     EncryptedProductPrice=Encrypt(ProductPrice)
                                     EncryptedQuantity=Encrypt(Quantity)
@@ -214,20 +216,21 @@ class Login(Screen):
 
 
 def Decrypt(Data):
+    print(Data)
     Key=KeyStore[0]
-    print(KeyStore[0])
     cipher=Fernet(Key)
     DecryptedData=cipher.decrypt(Data)
-    return DecryptedData
+    return DecryptedData.decode('utf-8')
                         
 def Encrypt(Data):
+    print(Data)
     Key=KeyStore[0]
     cipher=Fernet(Key)
     Data=str(Data)
     DataBytes=bytes(Data,'utf-8')
     EncryptedData=cipher.encrypt(DataBytes)
     return EncryptedData
-                        
+
 #inputs-Payment Information
 #outputs-Order(deliveryaddress and Order)
 class PaymentScreen(Screen):
@@ -313,7 +316,9 @@ class ViewBasket(Screen):
         
         Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
         def BackClick(self):
+            ViewBasketScreen=Screenmanager.get_screen(Screenmanager.current)
             Screenmanager.current="Shopfront"
+            ViewBasketScreen.clear_widgets()
         Back.bind(on_press=BackClick)
         self.add_widget(Back)
         #help button will be added later
@@ -326,17 +331,22 @@ class Shopfront(Screen):
         self.add_widget(ShopfrontTitle)
 
         def ViewBasketClick(self):
+            test=Encrypt("Steve")                     
+            print(test)
+            print("decrypttesst")
+            print(Decrypt(test))
             Screenmanager.current="ViewBasket"
             ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
-            print(Encrypt("steve"))
             #In future need to add some way of getting the quantity of a specific item and removing the previous label if more items are added to basket after someone has already pressed viewbasket
             cursor.execute("Select * From Basket")
             Basket=cursor.fetchall()
             for row in Basket:
                 print(type(row))
-                DecryptedRow=Decrypt(str(row))
-                Product=Label(text=DecryptedRow,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
-                ViewBasketScreen.add_widget(Product)
+                DecryptedProduct=Decrypt(row[0])
+                DecryptedProductPrice=Decrypt(row[1])
+                DecryptedQuantity=Decrypt(row[2])
+                Product=Label(text=DecryptedProduct+" "+DecryptedProductPrice+" "+DecryptedQuantity,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
+                ViewBasketScreen.add_widget(Product) 
             
         
         Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
