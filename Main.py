@@ -19,13 +19,14 @@ green = [0, 1, 0, 1] #RGBA values /255
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
 KeyStore=[]
+ProductNames=[]
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
 Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
 #generates encryption key using Scrypt
 def GenerateKey(UsernameAndPassword,salt):
-    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2,r=1,p=1)
+    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2**20,r=8,p=1)
     UsernameAndPassword=str(UsernameAndPassword).encode()   
     Key=base64.urlsafe_b64encode(KeyDerivationFunction.derive(UsernameAndPassword))
     return Key
@@ -92,15 +93,16 @@ class Login(Screen):
                         print(KeyStore[0])
                         #defines encrypt and decrypt functions
                         def Decrypt(Data):
+                            cipher=Fernet(Key)
                             DecryptedData=cipher.decrypt(Data)
                             return DecryptedData
                         
                         def Encrypt(Data):
+                            cipher=Fernet(Key)
                             Data=str(Data)
                             DataBytes=bytes(Data, 'utf-8')
                             EncryptedData=cipher.encrypt(DataBytes)
                             return EncryptedData
-                        print(Encrypt("steve"))
                         cursor.execute("SELECT * from Products")
                         Table=cursor.fetchall()
                         print(Table)
@@ -111,7 +113,6 @@ class Login(Screen):
 
                             ProductName=row[0]
                             ProductPrice=row[1]
-                            cursor.execute("SELECT * from Products")
                         
                         
 
@@ -120,32 +121,41 @@ class Login(Screen):
                                 ProductPressed=self.text
                                 Quantity+=1
 
-                                
-                                cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
-                                Product=self.text#getting title then using it to search the database for its price then adding price to basket
-                                cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
-                                ProductPrice=row[1]
-                               
-                                EncryptedProduct=Encrypt(Product)
-                                cursor.execute("Select *from Basket where Productname=(?)",(EncryptedProduct,))
-                                InBasket=cursor.fetchall()
-                                if InBasket !=[]:
-                                     cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProduct,))
-                                     TempQuantity=cursor.fetchall()
-                                     Quantity=TempQuantity[0]
-                                     Quantity+=1
-                                     EncryptedQuantity2=Encrypt(Quantity)
-                                     cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProduct))
-                                     conn.commit()
+                                #getting title then using it to search the database for its price then adding price to basket
 
-                                
-                                else:
+                               
+                                cursor.execute("Select Productname from Basket")
+                                Basket=cursor.fetchall()
+                                if Basket != []:
+                                    for row in Basket:
+                                        DecryptedProductName=Decrypt(row)
+                                        ProductNames.append(DecryptedProductName)
+                                        return ProductNames
+                                    NumberOfProductNames=len(ProductNames)
+                                    EncryptedProduct=Encrypt(ProductPressed)
+                                    for i in NumberOfProductNames:
+                                         
+                                         if ProductNames[0]: 
+                                              
+                                if Basket==None:
+                                    print("new Product")
                                     EncryptedProductPrice=Encrypt(ProductPrice)
                                     EncryptedQuantity=Encrypt(Quantity)
                                     cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
                                     conn.commit()
 
- 
+                                else:
+                                    print("old product")
+                                    cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProduct,))
+                                    TempQuantity=cursor.fetchall()
+                                    Quantity=Decrypt(TempQuantity)
+                                    print(Quantity)
+                                    Quantity+=1
+                                    print(Quantity)
+                                    EncryptedQuantity2=Encrypt(Quantity)
+                                    cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProduct))
+                                    conn.commit()
+
                         IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
                         IndividualProduct.bind(on_press=ProductPress)
                         ShopfrontScreen.add_widget(IndividualProduct)
