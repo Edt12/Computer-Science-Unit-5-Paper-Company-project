@@ -15,11 +15,12 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import hashlib
 
-green = [0, 1, 0, 1] #RGBA values /255 
+green=[0, 1, 0, 1] #RGBA values /255 
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
 KeyStore=[]
-ProductNames=[]
+ProductNameStore=[]
+EncryptedProductNameStore=[]
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
@@ -108,7 +109,6 @@ class Login(Screen):
                         print(Table)
                         for row in Table: 
                             Screenmanager.current="Shopfront"
-                            print("steve")
                             ShopfrontScreen=Screenmanager.get_screen("Shopfront")#get screen grabs an instance of a screen and is used to place widgets on different screens
 
                             ProductName=row[0]
@@ -121,40 +121,75 @@ class Login(Screen):
                                 ProductPressed=self.text
                                 Quantity+=1
 
-                                #getting title then using it to search the database for its price then adding price to basket
-
+                                
+                                cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
+                                Product=self.text#getting title then using it to search the database for its price then adding price to basket
+                                cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
                                
+                                EncryptedProduct=Encrypt(Product)
                                 cursor.execute("Select Productname from Basket")
                                 Basket=cursor.fetchall()
-                                if Basket != []:
+                                print(Basket)
+                                def DecryptBasket(self):
                                     for row in Basket:
-                                        DecryptedProductName=Decrypt(row)
-                                        ProductNames.append(DecryptedProductName)
-                                        return ProductNames
-                                    NumberOfProductNames=len(ProductNames)
-                                    EncryptedProduct=Encrypt(ProductPressed)
-                                    for i in NumberOfProductNames:
+                                        print("Decrypting Basket")
+                                        EncryptedProductNameStore.append(row[0])
+                                        DecryptedProductName=Decrypt(row[0])
+                                        ProductNameStore.append(DecryptedProductName)
+                                        print(ProductNameStore)
+                                        return ProductNameStore
+                                def CompareBasketToProductPressed(self):
+                                    print("Comparing Basket")
+                                    print(ProductNameStore)
+                                    Index=-1
+                                    if ProductNameStore!=[]:
                                          
-                                         if ProductNames[0]: 
-                                              
-                                if Basket==None:
-                                    print("new Product")
+                                        for ProductNames in ProductNameStore:
+                                            Index+=1
+                                            print(Index)
+                                            ItemAlreadyInBasket=False    
+                                            print("searching")
+                                            if ProductNameStore[Index]==bytes(ProductPressed,'utf-8'):
+                                                print("great Success")
+                                                cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProductNameStore[Index],))
+                                                TempQuantity=cursor.fetchone()
+                                                print(type(TempQuantity))
+                                                Quantity=Decrypt(TempQuantity[0])
+                                                Quantity=Quantity.decode()
+                                                Quantity=int(Quantity)
+                                                Quantity+=1
+                                                EncryptedQuantity2=Encrypt(Quantity)
+                                                cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProductNameStore[Index]))
+                                                conn.commit()
+                                                ItemAlreadyInBasket=True
+                                                return ItemAlreadyInBasket
+                                            else:
+                                                print("HE CANNOT AFFORD")
+                                                return ItemAlreadyInBasket
+                                    else:
+                                        print("adding to basket new ")
+                                        Quantity=1
+                                        EncryptedProductPrice=Encrypt(ProductPrice)
+                                        EncryptedQuantity=Encrypt(Quantity)
+                                        cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
+                                        conn.commit()
+
+                        
+
+                                DecryptBasket(self)
+                                ItemAlreadyInBasket=CompareBasketToProductPressed(self)
+                                
+                                   
+
+                    
+                                if ItemAlreadyInBasket==False:
+                                    print("adding to basket new special ")
                                     EncryptedProductPrice=Encrypt(ProductPrice)
                                     EncryptedQuantity=Encrypt(Quantity)
                                     cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
                                     conn.commit()
 
-                                else:
-                                    print("old product")
-                                    cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProduct,))
-                                    TempQuantity=cursor.fetchall()
-                                    Quantity=Decrypt(TempQuantity)
-                                    print(Quantity)
-                                    Quantity+=1
-                                    print(Quantity)
-                                    EncryptedQuantity2=Encrypt(Quantity)
-                                    cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProduct))
-                                    conn.commit()
+                        
 
                         IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
                         IndividualProduct.bind(on_press=ProductPress)
