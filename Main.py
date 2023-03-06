@@ -19,6 +19,7 @@ green = [0, 1, 0, 1] #RGBA values /255
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
 KeyStore=[]
+ProductNameStore=[]
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
 cursor=conn.cursor()#adds connection to cursor
@@ -106,7 +107,6 @@ class Login(Screen):
                         print(Table)
                         for row in Table: 
                             Screenmanager.current="Shopfront"
-                            print("steve")
                             ShopfrontScreen=Screenmanager.get_screen("Shopfront")#get screen grabs an instance of a screen and is used to place widgets on different screens
 
                             ProductName=row[0]
@@ -124,22 +124,52 @@ class Login(Screen):
                                 cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
                                 Product=self.text#getting title then using it to search the database for its price then adding price to basket
                                 cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
-                                ProductPrice=row[1]
                                
                                 EncryptedProduct=Encrypt(Product)
-                                cursor.execute("Select *from Basket where Productname=(?)",(EncryptedProduct,))
-                                InBasket=cursor.fetchall()
-                                if InBasket !=[]:
-                                     cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProduct,))
-                                     TempQuantity=cursor.fetchall()
-                                     Quantity=TempQuantity[0]
-                                     Quantity+=1
-                                     EncryptedQuantity2=Encrypt(Quantity)
-                                     cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProduct))
-                                     conn.commit()
+                                cursor.execute("Select Productname from Basket")
+                                Basket=cursor.fetchall()
+                                print(Basket)
+                                def DecryptBasket(self):
+                                    for row in Basket:
+                                        print("Decrypting Basket")
+                                        DecryptedProductName=Decrypt(row[0])
+                                        ProductNameStore.append(DecryptedProductName)
+                                        print(ProductNameStore)
+                                        return ProductNameStore
+                                def CompareBasketToProductPressed(self):
+                                    print("Comparing Basket")
+                                    print(ProductNameStore)
+                                    Index=-1
+                                    for i in ProductNameStore:
+                                        Index+=1
+                                        print(Index)
+                                        ItemAlreadyInBasket=False    
+                                        print("searching")
+                                        if ProductNameStore[Index]==bytes(ProductPressed,'utf-8'):
+                                            print("great Success")
+                                            cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProduct,))
+                                            TempQuantity=cursor.fetchone()
+                                            Quantity=Decrypt(TempQuantity)
+                                            Quantity+=1
+                                            EncryptedQuantity2=Encrypt(Quantity)
+                                            cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProduct))
+                                            conn.commit()
+                                            ItemAlreadyInBasket=True
+                                            return ItemAlreadyInBasket
+                                        else:
+                                            print("HE CANNOT AFFORD")
+                                            return ItemAlreadyInBasket
 
+
+                                DecryptBasket(self)
+                                ItemAlreadyInBasket=CompareBasketToProductPressed(self)
+                                Basket="stewetww"
                                 
-                                else:
+                                   
+
+                    
+                                if ItemAlreadyInBasket==False:
+                                    print("adding to basket new ")
                                     EncryptedProductPrice=Encrypt(ProductPrice)
                                     EncryptedQuantity=Encrypt(Quantity)
                                     cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
