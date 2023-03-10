@@ -28,7 +28,7 @@ cursor=conn.cursor()#adds connection to cursor
 Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
 #generates encryption key using Scrypt
 def GenerateKey(UsernameAndPassword,salt):
-    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2**20,r=8,p=1)
+    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2,r=1,p=1)
     UsernameAndPassword=str(UsernameAndPassword).encode()   
     Key=base64.urlsafe_b64encode(KeyDerivationFunction.derive(UsernameAndPassword))
     return Key
@@ -349,6 +349,7 @@ class ViewBasket(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
+        self.clear_widgets()
         ViewBasketTitle=Label(text="Basket View Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ViewBasketTitle)
 
@@ -363,6 +364,7 @@ class ViewBasket(Screen):
         def BackClick(self):
             ViewBasketScreen=Screenmanager.get_screen(Screenmanager.current)
             Screenmanager.current="Shopfront"
+            ViewBasketScreen.clear_widgets()
 
         Back.bind(on_press=BackClick)
         self.add_widget(Back)
@@ -386,14 +388,10 @@ class Shopfront(Screen):
                 DecryptedProduct=Decrypt(row[0])
                 DecryptedProductPrice=Decrypt(row[1])
                 DecryptedQuantity=Decrypt(row[2])
+                
                 Product=Label(text=DecryptedProduct+" "+DecryptedProductPrice+" "+DecryptedQuantity,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
+                ViewBasketScreen.add_widget(Product)
 
-                if len(ProductExistsOnScreen)==0:
-                    ViewBasketScreen.add_widget(Product) 
-                    ProductExistsOnScreen.append("1")
-                else:
-                    print("updating")
-                    Product.texture_update()
 
         Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
         Viewbasket.bind(on_press=ViewBasketClick)
