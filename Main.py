@@ -38,6 +38,24 @@ def Encrypt(Data):
 def Decrypt(Data):
      pass
 
+def ViewBasket():
+    pass
+
+def ViewBasket():
+    Screenmanager.current="ViewBasket"
+    ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
+    #In future need to add some way of getting the quantity of a specific item and removing the previous label if more items are added to basket after someone has already pressed viewbasket
+    cursor.execute("Select * From Basket")
+    Basket=cursor.fetchall()
+    for row in Basket:
+                print(type(row))
+                DecryptedProduct=Decrypt(row[0])
+                DecryptedProductPrice=Decrypt(row[1])
+                DecryptedQuantity=Decrypt(row[2])
+                
+                Product=Label(text=DecryptedProduct+" "+DecryptedProductPrice+" "+DecryptedQuantity,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
+                ViewBasketScreen.add_widget(Product)
+
 
        
         
@@ -345,6 +363,23 @@ class PaymentScreen(Screen):
         #help button will be added later
 
 
+class Shopfront(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.layout=FloatLayout()
+        
+        ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
+        self.add_widget(ShopfrontTitle)
+
+        def ViewBasketClick(self):
+         
+
+        Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
+        Viewbasket.bind(on_press=ViewBasketClick)
+        self.add_widget(Viewbasket)
+
+            #help button will be added later
+
 class ViewBasket(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -356,49 +391,17 @@ class ViewBasket(Screen):
         CheckoutAndPay=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text=str("Checkout and Pay"),background_color=green,color=Black)
         def CheckoutAndPayClick(self):
             Screenmanager.current="PaymentScreen"
-        
+            
         CheckoutAndPay.bind(on_press=CheckoutAndPayClick)        
         self.add_widget(CheckoutAndPay)
         
         Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
         def BackClick(self):
             ViewBasketScreen=Screenmanager.get_screen(Screenmanager.current)
-            Screenmanager.current="Shopfront"
-            ViewBasketScreen.clear_widgets()
-
+            
         Back.bind(on_press=BackClick)
         self.add_widget(Back)
         #help button will be added later
-class Shopfront(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.layout=FloatLayout()
-        
-        ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
-        self.add_widget(ShopfrontTitle)
-
-        def ViewBasketClick(self):
-            Screenmanager.current="ViewBasket"
-            ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
-            #In future need to add some way of getting the quantity of a specific item and removing the previous label if more items are added to basket after someone has already pressed viewbasket
-            cursor.execute("Select * From Basket")
-            Basket=cursor.fetchall()
-            for row in Basket:
-                print(type(row))
-                DecryptedProduct=Decrypt(row[0])
-                DecryptedProductPrice=Decrypt(row[1])
-                DecryptedQuantity=Decrypt(row[2])
-                
-                Product=Label(text=DecryptedProduct+" "+DecryptedProductPrice+" "+DecryptedQuantity,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
-                ViewBasketScreen.add_widget(Product)
-
-
-        Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
-        Viewbasket.bind(on_press=ViewBasketClick)
-        self.add_widget(Viewbasket)
-
-            #help button will be added later
-
 def main():
   
     #payment information table will be added in future
