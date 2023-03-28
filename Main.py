@@ -38,23 +38,7 @@ def Encrypt(Data):
 def Decrypt(Data):
      pass
 
-def ViewBasket():
-    pass
 
-def ViewBasket():
-    Screenmanager.current="ViewBasket"
-    ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
-    #In future need to add some way of getting the quantity of a specific item and removing the previous label if more items are added to basket after someone has already pressed viewbasket
-    cursor.execute("Select * From Basket")
-    Basket=cursor.fetchall()
-    for row in Basket:
-                print(type(row))
-                DecryptedProduct=Decrypt(row[0])
-                DecryptedProductPrice=Decrypt(row[1])
-                DecryptedQuantity=Decrypt(row[2])
-                
-                Product=Label(text=DecryptedProduct+" "+DecryptedProductPrice+" "+DecryptedQuantity,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
-                ViewBasketScreen.add_widget(Product)
 
 
        
@@ -92,14 +76,15 @@ class Login(Screen):
             EncodedPassword=Password.encode()
             HashedPassword=hashlib.sha3_512(EncodedPassword)
             cursor.execute("SELECT * From UsersAndPasswords")
-            Table=cursor.fetchall()
-            if Table!=[]:
-                for row in Table:#goes through every row in UserAndPasswords Table
+            UsersAndPasswords=cursor.fetchall()
+            if UsersAndPasswords!=[]:
+                for row in UsersAndPasswords:#goes through every row in UserAndPasswords Table
                     #compare inputed hashed username and password when they are in hexdigest form as that is how they are stored in database
                     print("compare")
                 
                     if row[1]== HashedUsername.hexdigest() and row[2]== HashedPassword.hexdigest():#rows in sqlite can be referenced through a list e.g row 0 is first column ,row 1 is second column
                         print("Both Correct")#Username.text and Password.text are text from login input boxes
+                        UserType=row[4]
                         #generate cipher for encryption
                         HexedHashedUsername=HashedUsername.hexdigest()
                         cursor.execute("Select Salt from UsersAndPasswords where Username=(?)",(HexedHashedUsername,))
@@ -126,67 +111,83 @@ class Login(Screen):
                         cursor.execute("SELECT * from Products")
                         Table=cursor.fetchall()
                         print(Table)
-                        for row in Table: 
-                            Screenmanager.current="Shopfront"
-                            ShopfrontScreen=Screenmanager.get_screen("Shopfront")#get screen grabs an instance of a screen and is used to place widgets on different screens
+                        for row in Table:
+                            if UserType=="Customer":
+                                Screenmanager.current="Shopfront"
+                                ShopfrontScreen=Screenmanager.get_screen("Shopfront")#get screen grabs an instance of a screen and is used to place widgets on different screens
 
-                            ProductName=row[0]
-                            ProductPrice=row[1]
+                                ProductName=row[0]
+                                ProductPrice=row[1]
                         
                         
 
-                            def ProductPress(self):
-                                Quantity=0
-                                ProductPressed=self.text
-                                Quantity+=1
+                                def ProductPress(self):
+                                    Quantity=0
+                                    ProductPressed=self.text
+                                    Quantity+=1
 
                                 
-                                cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
-                                Product=self.text#getting title then using it to search the database for its price then adding price to basket
-                                cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
+                                    cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
+                                    Product=self.text#getting title then using it to search the database for its price then adding price to basket
+                                    cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
                                
-                                EncryptedProduct=Encrypt(Product)
-                                cursor.execute("Select Productname from Basket")
-                                Basket=cursor.fetchall()
-                                print(Basket)
-                                def DecryptBasket(self):
-                                    for row in Basket:
-                                        print("Decrypting Basket")
-                                        EncryptedProductNameStore.append(row[0])
-                                        DecryptedProductName=Decrypt(row[0])
-                                        ProductNameStore.append(DecryptedProductName)
+                                    EncryptedProduct=Encrypt(Product)
+                                    cursor.execute("Select Productname from Basket")
+                                    Basket=cursor.fetchall()
+                                    print(Basket)
+                                    def DecryptBasket(self):
+                                        for row in Basket:
+                                            print("Decrypting Basket")
+                                            EncryptedProductNameStore.append(row[0])
+                                            DecryptedProductName=Decrypt(row[0])
+                                            ProductNameStore.append(DecryptedProductName)
+                                            print(ProductNameStore)
+                                            return ProductNameStore
+                                    def CompareBasketToProductPressed(self):
+                                        print("Comparing Basket")
                                         print(ProductNameStore)
-                                        return ProductNameStore
-                                def CompareBasketToProductPressed(self):
-                                    print("Comparing Basket")
-                                    print(ProductNameStore)
-                                    Index=-1
-                                    if ProductNameStore!=[]:
-                                         
-                                        for ProductNames in ProductNameStore:
-                                            Index+=1
-                                            print(Index)
-                                            ItemAlreadyInBasket=False    
-                                            print("searching")
-                                            if ProductNameStore[Index]==bytes(ProductPressed,'utf-8'):
-                                                print("great Success")
-                                                cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProductNameStore[Index],))
-                                                TempQuantity=cursor.fetchone()
-                                                print(type(TempQuantity))
-                                                Quantity=Decrypt(TempQuantity[0])
-                                                Quantity=Quantity.decode()
-                                                Quantity=int(Quantity)
-                                                Quantity+=1
-                                                EncryptedQuantity2=Encrypt(Quantity)
-                                                cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProductNameStore[Index]))
-                                                conn.commit()
-                                                ItemAlreadyInBasket=True
-                                                return ItemAlreadyInBasket
-                                            else:
-                                                return ItemAlreadyInBasket
-                                    else:
-                                        print("adding to basket new ")
-                                        Quantity=1
+                                        Index=-1
+                                        if ProductNameStore!=[]:
+                                        
+                                            for ProductNames in ProductNameStore:
+                                                Index+=1
+                                                print(Index)
+                                                ItemAlreadyInBasket=False    
+                                                print("searching")
+                                                if ProductNameStore[Index]==bytes(ProductPressed,'utf-8'):
+                                                    print("great Success")
+                                                    cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProductNameStore[Index],))
+                                                    TempQuantity=cursor.fetchone()
+                                                    print(type(TempQuantity))
+                                                    Quantity=Decrypt(TempQuantity[0])
+                                                    Quantity=Quantity.decode()
+                                                    Quantity=int(Quantity)
+                                                    Quantity+=1
+                                                    EncryptedQuantity2=Encrypt(Quantity)
+                                                    cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProductNameStore[Index]))
+                                                    conn.commit()
+                                                    ItemAlreadyInBasket=True
+                                                    return ItemAlreadyInBasket
+                                                else:
+                                                    return ItemAlreadyInBasket
+                                        else:
+                                            print("adding to basket new ")
+                                            Quantity=1
+                                            EncryptedProductPrice=Encrypt(ProductPrice)
+                                            EncryptedQuantity=Encrypt(Quantity)
+                                            cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
+                                            conn.commit()
+
+                        
+
+                                    DecryptBasket(self)
+                                    ItemAlreadyInBasket=CompareBasketToProductPressed(self)
+                                
+                                   
+
+                    
+                                    if ItemAlreadyInBasket==False:
+                                        print("adding to basket new special ")
                                         EncryptedProductPrice=Encrypt(ProductPrice)
                                         EncryptedQuantity=Encrypt(Quantity)
                                         cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
@@ -194,39 +195,28 @@ class Login(Screen):
 
                         
 
-                                DecryptBasket(self)
-                                ItemAlreadyInBasket=CompareBasketToProductPressed(self)
-                                
-                                   
+                                IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
+                                IndividualProduct.bind(on_press=ProductPress)
+                                ShopfrontScreen.add_widget(IndividualProduct)
+                                ProductPos_hintX+=0.2
+                                ProductNumber+=1
 
-                    
-                                if ItemAlreadyInBasket==False:
-                                    print("adding to basket new special ")
-                                    EncryptedProductPrice=Encrypt(ProductPrice)
-                                    EncryptedQuantity=Encrypt(Quantity)
-                                    cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
-                                    conn.commit()
+                                ProductNumber_DividedBy5=ProductNumber/5
+                                if ProductNumber_DividedBy5.is_integer():#is integer checks whether something is integer
+                                    ProductPos_hintX=0
+                                    ProductPos_hintY+=0.1
+                            if UserType=="Manager":
+                                Screenmanager.current="Manager"
+                                print("manager")
 
-                        
 
-                        IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
-                        IndividualProduct.bind(on_press=ProductPress)
-                        ShopfrontScreen.add_widget(IndividualProduct)
-                        ProductPos_hintX+=0.2
-                        ProductNumber+=1
-
-                        ProductNumber_DividedBy5=ProductNumber/5
-                        if ProductNumber_DividedBy5.is_integer():#is integer checks whether something is integer
-                            ProductPos_hintX=0
-                            ProductPos_hintY+=0.1
-                    
-            if row[0]== UsernameEntry.text and row[1]!= PasswordEntry.text:
+                if row[0]== UsernameEntry.text and row[1]!= PasswordEntry.text:
                         print("incorrect")
                         
-            if row[0]!= UsernameEntry.text and row[1]== PasswordEntry.text:
+                if row[0]!= UsernameEntry.text and row[1]== PasswordEntry.text:
                         print("incorrect")
 
-            if row[0]!= UsernameEntry.text and row[1]== PasswordEntry.text:
+                if row[0]!= UsernameEntry.text and row[1]== PasswordEntry.text:
                         print("incorrect")
                    
         EnterUsernameandPassword.bind(on_press=LoginClick)
@@ -245,7 +235,7 @@ class Login(Screen):
             Usernames=cursor.fetchall()
             print(Usernames)
             def check():
-                UsernameAlreadyUsed=False
+                UsernameAlreadyUse=False
                 if Usernames!=[]:
                     for row in Usernames:
                         print("rowing")
@@ -256,7 +246,7 @@ class Login(Screen):
                         else:
                              return UsernameAlreadyUse
                 else: 
-                    return UsernameAlreadyUsed       
+                    return UsernameAlreadyUse
                         
             UsernameAlreadyUse=check()#function so commands below arent executed in a loop
             print(UsernameAlreadyUse)
@@ -362,7 +352,10 @@ class PaymentScreen(Screen):
         self.add_widget(PayButton)
         #help button will be added later
 
-
+class ViewBasket(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        pass
 class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -370,9 +363,43 @@ class Shopfront(Screen):
         
         ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ShopfrontTitle)
+        ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
 
         def ViewBasketClick(self):
-         
+            Screenmanager.current="ViewBasket"
+       
+            cursor.execute("Select * From Basket")
+            Basket=cursor.fetchall()
+            ViewBasketScreen.clear_widgets()
+           
+
+            ViewBasketScreen.layout=FloatLayout()
+            ViewBasketTitle=Label(text="Basket View Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
+            ViewBasketScreen.add_widget(ViewBasketTitle)
+
+            CheckoutAndPay=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text=str("Checkout and Pay"),background_color=green,color=Black)
+            def CheckoutAndPayClick(self):
+                Screenmanager.current="PaymentScreen"
+            
+            CheckoutAndPay.bind(on_press=CheckoutAndPayClick)        
+            ViewBasketScreen.add_widget(CheckoutAndPay)
+        
+            Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
+            def BackClick(self):
+                Screenmanager.current="Shopfront"
+            Back.bind(on_press=BackClick)
+            ViewBasketScreen.add_widget(Back)
+
+
+
+            for row in Basket:
+                print(type(row))
+                DecryptedProduct=Decrypt(row[0])
+                DecryptedProductPrice=Decrypt(row[1])
+                DecryptedQuantity=Decrypt(row[2])
+           
+                Product=Label(text=DecryptedProduct+" "+DecryptedProductPrice+" "+DecryptedQuantity,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
+                ViewBasketScreen.add_widget(Product)
 
         Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
         Viewbasket.bind(on_press=ViewBasketClick)
@@ -380,28 +407,45 @@ class Shopfront(Screen):
 
             #help button will be added later
 
-class ViewBasket(Screen):
+class Manager(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
-        self.clear_widgets()
-        ViewBasketTitle=Label(text="Basket View Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
-        self.add_widget(ViewBasketTitle)
+        AddAndRemoveUsers=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.7},text="AddAndRemoveUsers",background_color=green,color=Black)
+        def UserScreen(self):
+            Screenmanager.current="AddOrRemoveUsers"
+        AddAndRemoveUsers.bind(on_press=UserScreen)
+        self.add_widget(AddAndRemoveUsers)
 
-        CheckoutAndPay=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text=str("Checkout and Pay"),background_color=green,color=Black)
-        def CheckoutAndPayClick(self):
-            Screenmanager.current="PaymentScreen"
-            
-        CheckoutAndPay.bind(on_press=CheckoutAndPayClick)        
-        self.add_widget(CheckoutAndPay)
+        ViewOrders=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.5},text="ViewOrders",background_color=green,color=Black)
+        self.add_widget(ViewOrders)
+
+        AddAndRemoveProducts=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.3},text="AddOrRemoveProducts",background_color=green,color=Black)
         
-        Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
+        self.add_widget(AddAndRemoveProducts)
+
+class AddOrRemoveUsers(Screen):
+    def __init__(self, **kw):
+        super().__init__(**kw)     
+        self.layout=FloatLayout()
+        Title=Label(text="Add/Remove Users Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.8},color=Black)
+        self.add_widget(Title)
+        User=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.5})
+        self.add_widget(User)
+        RemoveUser=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.3},text="AddOrRemoveProducts",background_color=green,color=Black)
+        def RemoveUserClick(self):
+            print("removingusers")
+            cursor.execute("Select*from ")
+        RemoveUser.bind(on_press=RemoveUserClick)
+        self.add_widget(RemoveUser)
+
+        Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)#color is writing color background color is background
         def BackClick(self):
-            ViewBasketScreen=Screenmanager.get_screen(Screenmanager.current)
-            
-        Back.bind(on_press=BackClick)
+            Screenmanager.current="Manager"
+        Back.bind(on_press=BackClick)#binds a function to happen when a button is pressed
         self.add_widget(Back)
-        #help button will be added later
+
+
 def main():
   
     #payment information table will be added in future
@@ -439,6 +483,8 @@ def main():
     Screenmanager.add_widget(ViewBasket(name="ViewBasket"))
     Screenmanager.add_widget(Shopfront(name="Shopfront"))
     Screenmanager.add_widget(Login(name="Login"))
+    Screenmanager.add_widget(Manager(name="Manager"))
+    Screenmanager.add_widget(AddOrRemoveUsers(name="AddOrRemoveUsers"))
     Screenmanager.current="Login"
 
   
