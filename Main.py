@@ -10,6 +10,7 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
+from kivy.uix.image import Image
 import os
 import base64
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
@@ -43,7 +44,20 @@ def Encrypt(Data):
      pass
 def Decrypt(Data):
      pass
-
+def EmailAddressValid(EmailAddress):
+    for letter in EmailAddress.text:
+        if '@' in EmailAddress.text:
+            print("Valid Email")
+            return True
+        else:
+            EmailAddress.text="Must Contain @"
+            return False
+def NumberChecker(Input):
+    try:
+        int(Input)
+    except ValueError:
+        print("Not an Integer")
+        return False         
 def RefreshOrderView():
         print("working")
         cursor.execute("Select * from Orders")
@@ -71,6 +85,7 @@ def RefreshOrderView():
 
         Back=Button(size_hint=(0.175,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
         def BackClick(self):
+            print(AccessLevel)
             if len(AccessLevel)==0:
                 Screenmanager.current="Staff"
             if len(AccessLevel)==1:
@@ -137,9 +152,11 @@ class Login(Screen):
         Screen.__init__(self,**kwargs)
     
         Window.clearcolor =(Grey)#sets background color for window to get value take each rgb value and divide by 255
-
         self.layout=FloatLayout()
-
+        
+        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.7},size_hint=(0.2,0.4))
+        self.add_widget(BackgroundImage)
+       
         UsernameEntry=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5})
         self.add_widget(UsernameEntry)
 
@@ -178,12 +195,6 @@ class Login(Screen):
                         cursor.execute("Select Salt from UsersAndPasswords where Username=(?)",(HexedHashedUsername,))
                         Salt=cursor.fetchone()
                         UsernameAndPassword=HashedPassword.hexdigest()+HashedUsername.hexdigest()
-                        print("HashedUsername")
-                        print(HashedUsername.hexdigest())
-                        print("Hashed Password")
-                        print(HashedPassword.hexdigest())
-                        print("UsernameandPassword")
-                        print(UsernameAndPassword)
                         Key=GenerateKey(UsernameAndPassword,salt=Salt[0])
                         print(Key)
                         cipher=Fernet(Key)
@@ -207,6 +218,7 @@ class Login(Screen):
                         cursor.execute("SELECT * from Products")
                         Table=cursor.fetchall()
                         print(Table)
+                        print(Encrypt("Steve",Key=KeyStore[0]))
                         for row in Table:
                             if UserType=="Customer":
                                 Screenmanager.current="Shopfront"
@@ -218,74 +230,52 @@ class Login(Screen):
                         
 
                                 def ProductPress(self):
-                                    Quantity=0
-                                    ProductPressed=self.text
-                                    Quantity+=1
+                                    
+                           
 
                                 
-                                    cursor.execute("SELECT *FROM Basket Where Productname = (?)",(ProductPressed,))#First Searches for item in basket
-                                    Product=self.text#getting title then using it to search the database for its price then adding price to basket
-                                    cursor.execute("SELECT *FROM Products Where Productname = (?)",(Product,))
-                               
-                                    EncryptedProduct=Encrypt(Product,Key=KeyStore[0])
-                                    cursor.execute("Select Productname from Basket")
-                                    Basket=cursor.fetchall()
-                                    print(Basket)
-                                    def DecryptBasket(self):
-                                        for row in Basket:
-                                            print("Decrypting Basket")
-                                            EncryptedProductNameStore.append(row[0])
-                                            DecryptedProductName=Decrypt(row[0],Key=KeyStore[0])
-                                            ProductNameStore.append(DecryptedProductName)
-                                            return ProductNameStore
+                                                                   
+                              
+                            
                                     def CompareBasketToProductPressed(self):
                                         print("Comparing Basket")
-                                        print(ProductNameStore)
-                                        Index=-1
-                                        if ProductNameStore!=[]:
-                                        
-                                            for ProductNames in ProductNameStore:
-                                                Index+=1
-                                                print(Index)
-                                                ItemAlreadyInBasket=False    
-                                                print("searching")
-                                                if ProductNameStore[Index]==bytes(ProductPressed,'utf-8'):
-                                                    print("great Success")
-                                                    cursor.execute("Select Quantity from Basket where Productname=(?)",(EncryptedProductNameStore[Index],))
-                                                    TempQuantity=cursor.fetchone()
-                                                    print(type(TempQuantity))
-                                                    Quantity=Decrypt(TempQuantity[0],Key=KeyStore[0])
-                                                    Quantity=Quantity.decode()
-                                                    Quantity=int(Quantity)
-                                                    Quantity+=1
-                                                    EncryptedQuantity2=Encrypt(Quantity,Key=KeyStore[0])
-                                                    cursor.execute("Update Basket Set Quantity=? Where Productname=?",(EncryptedQuantity2,EncryptedProductNameStore[Index]))
-                                                    conn.commit()
-                                                    ItemAlreadyInBasket=True
-                                                    return ItemAlreadyInBasket
-                                                else:
-                                                    return ItemAlreadyInBasket
-                                        else:
+                                        ProductPressed=self.text
+                                  
+                                    
+                                        EncryptedProductPressed=Encrypt(ProductPressed,Key=KeyStore[0])
+                                        ProductPressed=ProductPressed.encode()
+                                        HashedProductPressed=hashlib.sha3_512(ProductPressed)
+                                        cursor.execute("Select Quantity from Basket Where HashedProductName=(?)",(HashedProductPressed.hexdigest(),))
+                                        EncryptedBasketQuantity=cursor.fetchone()
+                                        print(EncryptedBasketQuantity)
+                                        if EncryptedBasketQuantity!=None:
+                                                    
+                                            DecryptedBasketQuantity=Decrypt(EncryptedBasketQuantity[0],Key=KeyStore[0])
+                                            BasketQuantity=DecryptedBasketQuantity.decode()
+                                            BasketQuantity=int(BasketQuantity)
+                                            print("great Success")
+                                            print(BasketQuantity)
+                                            BasketQuantity+=1
+                                            print(BasketQuantity)
+                                            EncryptedQuantity2=Encrypt(BasketQuantity,Key=KeyStore[0])
+                                            cursor.execute("Update Basket Set Quantity=? Where HashedProductName=?",(EncryptedQuantity2,HashedProductPressed.hexdigest()))
+                                            conn.commit()
+                                                 
+                                                
+                                        if EncryptedBasketQuantity==None:
                                             print("adding to basket new ")
                                             Quantity=1
                                             EncryptedProductPrice=Encrypt(ProductPrice,Key=KeyStore[0])
                                             EncryptedQuantity=Encrypt(Quantity,Key=KeyStore[0])
-                                            cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
+                                            HashedProductPressed=hashlib.sha3_512(ProductPressed)
+                                            cursor.execute("INSERT INTO Basket(ProductName,ProductPrice,Quantity,HashedProductName)VALUES(?,?,?,?)",(EncryptedProductPressed,EncryptedProductPrice,EncryptedQuantity,HashedProductPressed.hexdigest()))
                                             conn.commit()
 
                         
-
-                                    DecryptBasket(self)
-                                    ItemAlreadyInBasket=CompareBasketToProductPressed(self)
-                                
-                                   
-
-                    
-                                    if ItemAlreadyInBasket==False:
-                                        EncryptedProductPrice=Encrypt(ProductPrice,Key=KeyStore[0])
-                                        EncryptedQuantity=Encrypt(Quantity,Key=KeyStore[0])
-                                        cursor.execute("INSERT INTO Basket(Productname,ProductPrice,Quantity)VALUES(?,?,?)",(EncryptedProduct,EncryptedProductPrice,EncryptedQuantity))
-                                        conn.commit()
+                                    
+                               
+                                    CompareBasketToProductPressed(self)
+        
 
                         
 
@@ -303,7 +293,6 @@ class Login(Screen):
                                 Screenmanager.current="Staff"
                             if UserType=="Manager":
                                 Screenmanager.current="Manager"
-                                AccessLevel.append("1")
                                 
 
 
@@ -430,9 +419,10 @@ class PaymentScreen(Screen):
 
         RememberButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.7},text="Remember my Payment information",background_color=green,color=Black)
         def RememberClick(self):
-            cursor.execute("Select * from PaymentInfo Where UserID = (?)",UserIDStore[0])
+            cursor.execute("Select * from PaymentInfo Where UserID = (?)",str(UserIDStore[0]))
             PaymentInfoStored=cursor.fetchall()
             if PaymentInfoStored==[]:
+                ExpirationDate=ExpirationMonth.text+"/"+ ExpirationYear.text
                 if ExpirationDate=="/":
                         return
                 if len(CardNumber.text)!=16:
@@ -441,60 +431,84 @@ class PaymentScreen(Screen):
                 if len(SecurityCode.text)!=3:
                     SecurityCode.text="Incorrect Length"
                     return
-                if CardNumber.text!=int:
-                    CardNumber.text="Must be Number"
+                print("working")
+                if NumberChecker(CardNumber.text)==False:
+                    CardNumber.text="Number Required"
                     return
-                if SecurityCode.text!=int:
-                    SecurityCode.text="Must be Number"
+                
+                if NumberChecker(SecurityCode.text)==False:
+                    SecurityCode.text="Number Required"
                     return
-                for letter in EmailAddress.text:
-                    if '@' in EmailAddress.text:
-                        print("Valid Email")
-                    else:
-                        EmailAddress.text="Must Contain @"
-                        break
-                if len(DeliveryPostcode.text)!=6 or 7:
-                    DeliveryPostcode.text!="Incorrect Length"
+                
+                if EmailAddressValid(EmailAddress)==False:
+                    EmailAddress.text="Invalid Email Address"
                     return
-            
+                print("0")
+                if len(DeliveryPostcode.text)!=6:
+                    DeliveryPostcode.text="Incorrect Length"
+                    return
+                print("1")
                 if CardNumber.text=="":
                     CardNumber.text="Required"
                     return
-            
-                if SecurityCode=="":
+                print("2")
+                if SecurityCode.text=="":
                     SecurityCode.text="Required"
                     return
-            
-                if DeliveryPostcode=="":
+                print("3")
+                if DeliveryPostcode.text=="":
                     DeliveryPostcode.text="Required"
                     return
-            
-                if Postcode=="":
+                print("4")
+                if Postcode.text=="":
                     Postcode.text="Required"
                     return
+                print("5")
                 if BillingAddress.text=="":
                     BillingAddress.text="Required"
                     return
+                print("6")
+                print("Validation Checks Complete")
                 EncryptedCardNumber=Encrypt(CardNumber.text,Key=KeyStore[0])
-                ExpirationDate=ExpirationMonth.text+"/"+ ExpirationYear.text
                 EncryptedExpirationDate=Encrypt(ExpirationDate,Key=KeyStore[0])
-                EncryptedDeliveryAddress=Encrypt(DeliveryAddress.text,Key=KeyStore[0])
                 EncryptedPostcode=Encrypt(Postcode.text,Key=KeyStore[0])
-                EncryptedDeliveryPostcode=Encrypt(DeliveryPostcode.text,Key=KeyStore[0])
                 EncryptedSecurityCode=Encrypt(SecurityCode.text,Key=KeyStore[0])
                 EncryptedEmailAddress=Encrypt(EmailAddress.text,Key=KeyStore[0])
                 EncryptedBillingAddress=Encrypt(BillingAddress.text,Key=KeyStore[0])
-                cursor.execute("Insert Into PaymentInfo(UserID,CardNumber,SecurityCode,ExpirationDate,BillingAddress,Postcode,EmailAddress) Values (?,?,?,?,?,?,?)",UserIDStore[0],EncryptedCardNumber,EncryptedSecurityCode,EncryptedExpirationDate,EncryptedPostcode,EncryptedEmailAddress)
+                print("ITEMS ENCRYPTED")
+                cursor.execute("Insert Into PaymentInfo(UserID,CardNumber,SecurityCode,ExpirationDate,BillingAddress,Postcode,EmailAddress) Values(?,?,?,?,?,?,?)",(UserIDStore[0],EncryptedCardNumber,EncryptedSecurityCode,EncryptedExpirationDate,EncryptedPostcode,EncryptedBillingAddress,EncryptedEmailAddress))
                 conn.commit()
-
+                print("Payment info added to database")
             else:
-                return
+               print("Wrong")
         RememberButton.bind(on_press=RememberClick)
         self.add_widget(RememberButton)
 
-        AutofillButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.7},text="Autofill",background_color=green,color=Black)
+        AutofillButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.6},text="Autofill",background_color=green,color=Black)
         def AutofillClick(self):
-            pass
+
+            cursor.execute("Select*from PaymentInfo Where UserID=(?)",str(UserIDStore[0]))
+            PaymentInformation=cursor.fetchall()
+            for row in PaymentInformation:
+                StoredCardNumber=Decrypt(row[0],Key=KeyStore[0])
+                StoredSecurityCode=Decrypt(row[1],Key=KeyStore[0])
+                StoredExpirationDate=Decrypt(row[2],Key=KeyStore[0])
+                StoredBillingAddress=Decrypt(row[3],Key=KeyStore[0])
+                StoredPostcode=Decrypt(row[4],Key=KeyStore[0])
+                StoredEmailAddress=Decrypt(row[5],Key=KeyStore[0])
+
+
+
+
+            CardNumber.text=StoredCardNumber
+            SecurityCode.text=StoredSecurityCode
+            SplitStoredExpirationDate=StoredExpirationDate.split("/")
+            ExpirationMonth.text=SplitStoredExpirationDate[0]
+            ExpirationYear.text=SplitStoredExpirationDate[1]
+            BillingAddress.text=StoredBillingAddress
+            Postcode.text=StoredPostcode
+            EmailAddress.text=StoredEmailAddress
+
         AutofillButton.bind(on_press=AutofillClick)
         self.add_widget(AutofillButton)
 
@@ -511,45 +525,46 @@ class PaymentScreen(Screen):
             if len(SecurityCode.text)!=3:
                 SecurityCode.text="Incorrect Length"
                 return
-            if CardNumber.text!=int:
-                CardNumber.text="Must be Number"
+            if NumberChecker(CardNumber.text)==False:
+                CardNumber.text="Number Required"
                 return
-            if SecurityCode.text!=int:
-                SecurityCode.text="Must be Number"
+                
+            if NumberChecker(SecurityCode.text)==False:
+                SecurityCode.text="Number Required"
                 return
-            for letter in EmailAddress.text:
-                if '@' in EmailAddress.text:
-                    print("Valid Email")
-                else:
-                    EmailAddress.text="Must Contain @"
-                    break
-            if len(DeliveryPostcode.text)!=6 or 7:
+                
+            if EmailAddressValid(EmailAddress)==False:
+                return
+            print("1")
+            if len(DeliveryPostcode.text)!=6:
                 DeliveryPostcode.text!="Incorrect Length"
                 return
-            
+            print("2")
             if CardNumber.text=="":
                 CardNumber.text="Required"
                 return
-            
-            if SecurityCode=="":
+            print("3")
+            if SecurityCode.text=="":
                 SecurityCode.text="Required"
                 return
-            
-            if DeliveryPostcode=="":
+            print("4")
+            if DeliveryPostcode.text=="":
                 DeliveryPostcode.text="Required"
                 return
-            
-            if Postcode=="":
+            print("5")
+            if Postcode.text=="":
                 Postcode.text="Required"
                 return
+            print("6")
             if BillingAddress.text=="":
                 BillingAddress.text="Required"
                 return
-
+            print("7")
+             
             DeliveryAddressOrder=DeliveryAddress.text
             EncryptedDeliveryAddress=Encrypt(DeliveryAddressOrder,Key=KeyStore[0])
-            Postcode=DeliveryPostcode.text
-            EncryptedPostcode=Encrypt(Postcode,Key=KeyStore[0])
+            PreparedDeliveryPostcode=DeliveryPostcode.text
+            EncryptedPostcode=Encrypt(PreparedDeliveryPostcode,Key=KeyStore[0])
             cursor.execute("Select Quantity,ProductName from Basket")
             Basket=cursor.fetchall()
             Products=""
@@ -576,6 +591,7 @@ class PaymentScreen(Screen):
             EmailAddress.text=""
             DeliveryAddress.text=""
             DeliveryPostcode.text=""
+            
             
         PayButton.bind(on_press=PayButtonClick)   
         self.add_widget(PayButton)
@@ -619,16 +635,16 @@ class Shopfront(Screen):
             Back.bind(on_press=BackClick)
             ViewBasketScreen.add_widget(Back)
 
-
+            Ypos=0.8
 
             for row in Basket:
-                print(type(row))
                 DecryptedProduct=Decrypt(row[0],Key=KeyStore[0])
                 DecryptedProductPrice=Decrypt(row[1],Key=KeyStore[0])
                 DecryptedQuantity=Decrypt(row[2],Key=KeyStore[0])
            
-                Product=Label(text=DecryptedProduct+" "+DecryptedProductPrice+" "+DecryptedQuantity,size_hint=(0.2,0.1),pos_hint={'x':0.5,'y':0.5},color=Black)
+                Product=Label(text=DecryptedProduct+"X"+DecryptedQuantity+" Price=£"+DecryptedProductPrice,size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':Ypos},color=Black)
                 ViewBasketScreen.add_widget(Product)
+                Ypos-=0.1
 
         Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
         Viewbasket.bind(on_press=ViewBasketClick)
@@ -640,6 +656,8 @@ class Manager(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
+                                
+        AccessLevel.append("1")
         AddAndRemoveUsers=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.7},text="AddAndRemoveUsers",background_color=green,color=Black)
         def UserScreen(self):
             Screenmanager.current="AddOrRemoveUsers"
@@ -858,9 +876,10 @@ def main():
 
 
     cursor.execute("""create table IF NOT EXISTS Basket(
-    Productname blob(128)
+    ProductName blob(128)
     ,ProductPrice blob(128)
     ,Quantity blob (128)
+    ,HashedProductName blob(512)
     )""")
 
     #creates SQlite Database
@@ -893,12 +912,12 @@ def main():
     Screenmanager.add_widget(Staff(name="Staff"))
     Screenmanager.current="Login"
 
-  
+
     class PaperApp(App):#app class contains screenmanager  
         def build(self):
             return Screenmanager 
     PaperApp().run()
-
+  
     cursor.execute("Drop Table Basket")
 
     cursor.close()
