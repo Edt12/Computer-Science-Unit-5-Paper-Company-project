@@ -63,7 +63,7 @@ def RefreshOrderView():
         cursor.execute("Select * from Orders")
         EncryptedOrders=cursor.fetchall()
         OrderViewScreen=Screenmanager.get_screen("OrderView")
-        OrderViewScreen.clear_widgets()
+        OrderViewScreen.clear_widgets()#deletes all widgets on screen every time button pressed so they can be remade 
         ItemXpos=0.1
         DeliveryAddressXpos=0.4
         PostcodeXPos=0.6
@@ -85,7 +85,7 @@ def RefreshOrderView():
 
         Back=Button(size_hint=(0.175,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)
         def BackClick(self):
-            print(AccessLevel)
+            #sends user to different screen depending on their level of access
             if len(AccessLevel)==0:
                 Screenmanager.current="Staff"
             if len(AccessLevel)==1:
@@ -154,7 +154,7 @@ class Login(Screen):
         Window.clearcolor =(Grey)#sets background color for window to get value take each rgb value and divide by 255
         self.layout=FloatLayout()
         
-        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.7},size_hint=(0.2,0.4))
+        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.6},size_hint=(0.4,0.4))
         self.add_widget(BackgroundImage)
        
         UsernameEntry=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5})
@@ -373,8 +373,12 @@ def Encrypt(Data,Key):
 class PaymentScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
         self.layout=FloatLayout()#Float Layout is a layout in which widgets by defualt are not postioned
-
+        
+        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.0},size_hint=(0.4,0.4))
+        self.add_widget(BackgroundImage)
+       
         PaymentScreenTitle=Label(text="Payment Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)#Size_hint is size relative to screen size pos_hint is position relative to screen size e.g 0.1=one tenth
         self.add_widget(PaymentScreenTitle)
 
@@ -423,6 +427,7 @@ class PaymentScreen(Screen):
             PaymentInfoStored=cursor.fetchall()
             if PaymentInfoStored==[]:
                 ExpirationDate=ExpirationMonth.text+"/"+ ExpirationYear.text
+                #validation checks
                 if ExpirationDate=="/":
                         return
                 if len(CardNumber.text)!=16:
@@ -443,43 +448,43 @@ class PaymentScreen(Screen):
                 if EmailAddressValid(EmailAddress)==False:
                     EmailAddress.text="Invalid Email Address"
                     return
-                print("0")
+            
                 if len(DeliveryPostcode.text)!=6:
                     DeliveryPostcode.text="Incorrect Length"
                     return
-                print("1")
+              
                 if CardNumber.text=="":
                     CardNumber.text="Required"
                     return
-                print("2")
+       
                 if SecurityCode.text=="":
                     SecurityCode.text="Required"
                     return
-                print("3")
+            
                 if DeliveryPostcode.text=="":
                     DeliveryPostcode.text="Required"
                     return
-                print("4")
+           
                 if Postcode.text=="":
                     Postcode.text="Required"
                     return
-                print("5")
+         
                 if BillingAddress.text=="":
                     BillingAddress.text="Required"
                     return
-                print("6")
+         
                 print("Validation Checks Complete")
+                #Encrypting data using the encryption key generated on login
                 EncryptedCardNumber=Encrypt(CardNumber.text,Key=KeyStore[0])
                 EncryptedExpirationDate=Encrypt(ExpirationDate,Key=KeyStore[0])
                 EncryptedPostcode=Encrypt(Postcode.text,Key=KeyStore[0])
                 EncryptedSecurityCode=Encrypt(SecurityCode.text,Key=KeyStore[0])
                 EncryptedEmailAddress=Encrypt(EmailAddress.text,Key=KeyStore[0])
                 EncryptedBillingAddress=Encrypt(BillingAddress.text,Key=KeyStore[0])
-                print("ITEMS ENCRYPTED")
                 cursor.execute("Insert Into PaymentInfo(UserID,CardNumber,SecurityCode,ExpirationDate,BillingAddress,Postcode,EmailAddress) Values(?,?,?,?,?,?,?)",(UserIDStore[0],EncryptedCardNumber,EncryptedSecurityCode,EncryptedExpirationDate,EncryptedPostcode,EncryptedBillingAddress,EncryptedEmailAddress))
                 conn.commit()
                 print("Payment info added to database")
-            else:
+            else:#each customer can only have one set of payment information saved and this stops them from adding more than one
                print("Wrong")
         RememberButton.bind(on_press=RememberClick)
         self.add_widget(RememberButton)
@@ -487,9 +492,10 @@ class PaymentScreen(Screen):
         AutofillButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.6},text="Autofill",background_color=green,color=Black)
         def AutofillClick(self):
 
-            cursor.execute("Select*from PaymentInfo Where UserID=(?)",str(UserIDStore[0]))
+            cursor.execute("Select*from PaymentInfo Where UserID=(?)",str(UserIDStore[0]))#fetches payment info for specifc customer using their customer id
             PaymentInformation=cursor.fetchall()
             for row in PaymentInformation:
+                #Goes through customer payment info and decrypts it using their encryption key
                 StoredCardNumber=Decrypt(row[0],Key=KeyStore[0])
                 StoredSecurityCode=Decrypt(row[1],Key=KeyStore[0])
                 StoredExpirationDate=Decrypt(row[2],Key=KeyStore[0])
@@ -515,8 +521,9 @@ class PaymentScreen(Screen):
 
         PayButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.8},text="Pay",background_color=green,color=Black)
         def PayButtonClick(self):
-            ExpirationDate=ExpirationMonth.text+"/"+ ExpirationYear.text
-            print(ExpirationDate)
+            ExpirationDate=ExpirationMonth.text+"/"+ ExpirationYear.text#taking expiration date from month and year widgets
+            
+            #Validation Checks
             if ExpirationDate=="/":
                 return
             if len(CardNumber.text)!=16:
@@ -535,31 +542,31 @@ class PaymentScreen(Screen):
                 
             if EmailAddressValid(EmailAddress)==False:
                 return
-            print("1")
+
             if len(DeliveryPostcode.text)!=6:
                 DeliveryPostcode.text!="Incorrect Length"
                 return
-            print("2")
+
             if CardNumber.text=="":
                 CardNumber.text="Required"
                 return
-            print("3")
+
             if SecurityCode.text=="":
                 SecurityCode.text="Required"
                 return
-            print("4")
+    
             if DeliveryPostcode.text=="":
                 DeliveryPostcode.text="Required"
                 return
-            print("5")
+
             if Postcode.text=="":
                 Postcode.text="Required"
                 return
-            print("6")
+ 
             if BillingAddress.text=="":
                 BillingAddress.text="Required"
                 return
-            print("7")
+
              
             DeliveryAddressOrder=DeliveryAddress.text
             EncryptedDeliveryAddress=Encrypt(DeliveryAddressOrder,Key=KeyStore[0])
@@ -609,6 +616,9 @@ class Shopfront(Screen):
         ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ShopfrontTitle)
         ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
+         
+        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.8},size_hint=(0.2,0.2))
+        self.add_widget(BackgroundImage)
 
         def ViewBasketClick(self):
             Screenmanager.current="ViewBasket"
@@ -638,6 +648,7 @@ class Shopfront(Screen):
             Ypos=0.8
 
             for row in Basket:
+                #Decrypts products in basket so they can be show on screen
                 DecryptedProduct=Decrypt(row[0],Key=KeyStore[0])
                 DecryptedProductPrice=Decrypt(row[1],Key=KeyStore[0])
                 DecryptedQuantity=Decrypt(row[2],Key=KeyStore[0])
@@ -657,7 +668,7 @@ class Manager(Screen):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
                                 
-        AccessLevel.append("1")
+        AccessLevel.append("1")#Access level added to to show that this user is a manager so each screen knows what screen to send the user back to if they click back
         AddAndRemoveUsers=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.7},text="AddAndRemoveUsers",background_color=green,color=Black)
         def UserScreen(self):
             Screenmanager.current="AddOrRemoveUsers"
@@ -859,7 +870,7 @@ class Staff(Screen):
 
 def main():
   
-    #payment information table will be added in future
+    #creates all tables within database
     cursor.execute("""create table IF NOT EXISTS Products(
     Productname text Primary Key
     ,ProductPrice text(6)
@@ -900,7 +911,7 @@ def main():
     ,EmailAddress blob(128)
     ,UserID integer
     ,FOREIGN KEY(UserID) REFERENCES UsersAndPasswords(UserID))""")#() next to text is length of the inputs in bytes and for text data type it is number of characters
-
+    #Adds all screens to screenmanager so they can be moved betweene easily as in Kivy screen classes are controlled by a screenmanager class
     Screenmanager.add_widget(PaymentScreen(name="PaymentScreen"))#adds each screen to screenmanager to so they can be controlled
     Screenmanager.add_widget(ViewBasket(name="ViewBasket"))
     Screenmanager.add_widget(Shopfront(name="Shopfront"))
@@ -910,7 +921,7 @@ def main():
     Screenmanager.add_widget(AddOrRemoveProduct(name="AddOrRemoveProduct"))
     Screenmanager.add_widget(OrderView(name="OrderView"))
     Screenmanager.add_widget(Staff(name="Staff"))
-    Screenmanager.current="Login"
+    Screenmanager.current="Login"#sets first current screen to be login at start of the program
 
 
     class PaperApp(App):#app class contains screenmanager  
