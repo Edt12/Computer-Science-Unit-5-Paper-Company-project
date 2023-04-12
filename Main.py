@@ -35,7 +35,7 @@ cursor=conn.cursor()#adds connection to cursor
 Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
 #generates encryption key using Scrypt
 def GenerateKey(UsernameAndPassword,salt):
-    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2,r=1,p=1)
+    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2**14,r=1,p=1)
     UsernameAndPassword=str(UsernameAndPassword).encode()   
     Key=base64.urlsafe_b64encode(KeyDerivationFunction.derive(UsernameAndPassword))
     return Key
@@ -44,6 +44,7 @@ def Encrypt(Data):
      pass
 def Decrypt(Data):
      pass
+
 def EmailAddressValid(EmailAddress):
     for letter in EmailAddress.text:
         if '@' in EmailAddress.text:
@@ -52,12 +53,14 @@ def EmailAddressValid(EmailAddress):
         else:
             EmailAddress.text="Must Contain @"
             return False
+        
 def NumberChecker(Input):
     try:
         int(Input)
     except ValueError:
         print("Not an Integer")
         return False         
+    
 def RefreshOrderView():
         print("working")
         cursor.execute("Select * from Orders")
@@ -69,6 +72,8 @@ def RefreshOrderView():
         PostcodeXPos=0.6
         CompleteButtonXpos=0.8
         Ypos=0.8
+        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
+        OrderViewScreen.add_widget(HelpButton)
         ItemLabel=Label(text="Items",size_hint=(0.2,0.1),pos_hint={'x':0.1,'y':0.9},color=Black)
         OrderViewScreen.add_widget(ItemLabel)
 
@@ -138,6 +143,7 @@ def RefreshOrderView():
                 CompleteButton.bind(on_press=CompleteOrderClick)
                 OrderViewScreen.add_widget(CompleteButton)
 
+                
 
 
                 
@@ -396,7 +402,10 @@ class PaymentScreen(Screen):
         
         ExpirationYear=Spinner(size_hint=(0.1,0.05),pos_hint={'x':0.5,'y':0.7},text="Year",values=("23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40"))
         self.add_widget(ExpirationYear)
-
+        
+        ExpirationDateLabel=Label(text="Expiration Date",size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.675},color=Black)#Size_hint is size relative to screen size pos_hint is position relative to screen size e.g 0.1=one tenth
+        self.add_widget(ExpirationDateLabel)
+        
         SecurityCode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.6},text="Security Code")
         self.add_widget(SecurityCode)
 
@@ -420,6 +429,9 @@ class PaymentScreen(Screen):
 
         DeliveryPostcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.0},text="Delivery Postcode")
         self.add_widget(DeliveryPostcode)
+        
+        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
+        self.add_widget(HelpButton)
 
         RememberButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.7},text="Remember my Payment information",background_color=green,color=Black)
         def RememberClick(self):
@@ -452,7 +464,7 @@ class PaymentScreen(Screen):
                 if len(DeliveryPostcode.text)!=6:
                     DeliveryPostcode.text="Incorrect Length"
                     return
-              
+
                 if CardNumber.text=="":
                     CardNumber.text="Required"
                     return
@@ -598,6 +610,7 @@ class PaymentScreen(Screen):
             EmailAddress.text=""
             DeliveryAddress.text=""
             DeliveryPostcode.text=""
+            Postcode.text=""
             
             
         PayButton.bind(on_press=PayButtonClick)   
@@ -612,6 +625,8 @@ class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
+        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.9,'y':0.9},text="Help",background_color=green,color=Black)#color is writing color background color is background
+        self.add_widget(HelpButton)
         
         ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ShopfrontTitle)
@@ -692,7 +707,9 @@ class AddOrRemoveUsers(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)     
         self.layout=FloatLayout()
-       
+        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
+        self.add_widget(HelpButton)
+        
         RemoveUserTitle=Label(text="Remove User",size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.7},color=Black)
         self.add_widget(RemoveUserTitle)
 
@@ -789,7 +806,10 @@ class AddOrRemoveProduct(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)     
         self.layout=FloatLayout()
-       
+
+        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
+        self.add_widget(HelpButton)
+        
         AddProductTitle=Label(text="Add Product",size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.9},color=Black)
         self.add_widget(AddProductTitle)
 
@@ -850,6 +870,8 @@ class Staff(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
+        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
+        self.add_widget(HelpButton)
 
         ViewOrders=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.5},text="ViewOrders",background_color=green,color=Black)
         def OrderViewScreen(self):
