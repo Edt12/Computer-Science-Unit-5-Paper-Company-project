@@ -17,6 +17,7 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import hashlib
 
+
 green=[0, 1, 0, 1] #RGBA values /255 
 Grey=[0.8,0.8,0.8,1]
 Black=[0,0,0,1]
@@ -26,8 +27,6 @@ EncryptedProductNameStore=[]
 ProductExistsOnScreen=[]
 ProductsInBasket=[]
 UserIDStore=[]
-NumberOfTimesRefreshedPressed=[]
-WidgetList=[]
 AccessLevel=[]
 #Creating Sqlite Database
 conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
@@ -35,7 +34,7 @@ cursor=conn.cursor()#adds connection to cursor
 Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
 #generates encryption key using Scrypt
 def GenerateKey(UsernameAndPassword,salt):
-    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2**14,r=1,p=1)
+    KeyDerivationFunction=Scrypt(salt=salt,length=32,n=2**14,r=1,p=1)#defines parameters for encryption key
     UsernameAndPassword=str(UsernameAndPassword).encode()   
     Key=base64.urlsafe_b64encode(KeyDerivationFunction.derive(UsernameAndPassword))
     return Key
@@ -52,6 +51,7 @@ def EmailAddressValid(EmailAddress):
             return True
         else:
             EmailAddress.text="Must Contain @"
+            print("running")
             return False
         
 def NumberChecker(Input):
@@ -67,19 +67,19 @@ def RefreshOrderView():
         EncryptedOrders=cursor.fetchall()
         OrderViewScreen=Screenmanager.get_screen("OrderView")
         OrderViewScreen.clear_widgets()#deletes all widgets on screen every time button pressed so they can be remade 
+        #seting starting x and y for diffeent types of label
         ItemXpos=0.1
         DeliveryAddressXpos=0.4
         PostcodeXPos=0.6
         CompleteButtonXpos=0.8
         Ypos=0.8
-        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
-        OrderViewScreen.add_widget(HelpButton)
+        #labels for each category in basket
         ItemLabel=Label(text="Items",size_hint=(0.2,0.1),pos_hint={'x':0.1,'y':0.9},color=Black)
         OrderViewScreen.add_widget(ItemLabel)
 
         DeliveryAddressLabel=Label(text="Delivery Address",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         OrderViewScreen.add_widget(DeliveryAddressLabel)
-
+        
         DeliveryPostcodeLabel=Label(text="Delivery Postcode",size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.9},color=Black)
         OrderViewScreen.add_widget(DeliveryPostcodeLabel)
 
@@ -104,6 +104,7 @@ def RefreshOrderView():
                 EncryptedDeliveryAddress=row[2]
                 EncryptedPostcode=row[3]
                 UserID=row[4]
+                #
                 cursor.execute("Select Username from UsersAndPasswords Where UserID=(?)",str(UserID))
                 HashedHexedUsername=cursor.fetchone()
                 cursor.execute("Select Password from UsersAndPasswords Where UserID=(?)",str(UserID))
@@ -114,14 +115,16 @@ def RefreshOrderView():
                 #Taking all necessary data to make the encrytion key for the user then use it to decrypt their order
                 UsernameAndPassword=HashedHexedPassword[0]+HashedHexedUsername[0]
                 OrderEncryptionKey=GenerateKey(UsernameAndPassword=UsernameAndPassword,salt=Salt[0])
-         
-     
-           
+                print(OrderEncryptionKey)
+                #Decrypts items going to display from database
+                print("DeliveryAddress")
                 DeliveryAddress=Decrypt(EncryptedDeliveryAddress,Key=OrderEncryptionKey)
+                print("Postcode")
                 Postcode=Decrypt(EncryptedPostcode,Key=OrderEncryptionKey)
+                print("Items")
                 Items=Decrypt(EncryptedItems,Key=OrderEncryptionKey)
-           
 
+                #creates labels for to show what is in each column in orders table
                 ItemsLabel=Label(text=Items,size_hint=(0.2,0.1),pos_hint={'x':ItemXpos,'y':Ypos},color=Black)
                 OrderViewScreen.add_widget(ItemsLabel)
                 
@@ -143,10 +146,7 @@ def RefreshOrderView():
                 CompleteButton.bind(on_press=CompleteOrderClick)
                 OrderViewScreen.add_widget(CompleteButton)
 
-                
-
-
-                
+                #decreases y value by one each row in orders so labels dont overlap
                 Ypos-=0.1
 
 
@@ -202,12 +202,13 @@ class Login(Screen):
                         Salt=cursor.fetchone()
                         UsernameAndPassword=HashedPassword.hexdigest()+HashedUsername.hexdigest()
                         Key=GenerateKey(UsernameAndPassword,salt=Salt[0])
-                        print(Key)
+                    
                         cipher=Fernet(Key)
                         KeyStore.append(Key)
+                
                         cursor.execute("Select UserID from UsersAndPasswords Where Username=(?)",(HexedHashedUsername,))
                         UserID=cursor.fetchone()
-                        print(UserID)
+
                         UserIDStore.append(UserID[0])
                         #defines encrypt and decrypt functions
                         def Decrypt(Data,Key):
@@ -245,21 +246,23 @@ class Login(Screen):
                             
                                     def CompareBasketToProductPressed(self):
                                         print("Comparing Basket")
-                                        ProductPressed=self.text
-                                  
+                                        Text=self.text
+                                        TextSplit=Text.split("£")#Turns text into a list with each item being before or after £ sign
+                                        ProductPressed=TextSplit[0]#First part of text is name so that becomes productpressed
+                                        print(ProductPressed)
                                     
                                         EncryptedProductPressed=Encrypt(ProductPressed,Key=KeyStore[0])
-                                        ProductPressed=ProductPressed.encode()
+                                        ProductPressed=ProductPressed.encode()#encodes before hash as hash functions only take encoded text
                                         HashedProductPressed=hashlib.sha3_512(ProductPressed)
                                         cursor.execute("Select Quantity from Basket Where HashedProductName=(?)",(HashedProductPressed.hexdigest(),))
-                                        EncryptedBasketQuantity=cursor.fetchone()
+                                        EncryptedBasketQuantity=cursor.fetchone()#Using Hash function to search through database to get quantity
                                         print(EncryptedBasketQuantity)
                                         if EncryptedBasketQuantity!=None:
-                                                    
+                                            #Finding Quantity of item in database and then updating it so it can be displayed in basket       
                                             DecryptedBasketQuantity=Decrypt(EncryptedBasketQuantity[0],Key=KeyStore[0])
                                             BasketQuantity=DecryptedBasketQuantity.decode()
                                             BasketQuantity=int(BasketQuantity)
-                                            print("great Success")
+                                            print("Successful decryption")
                                             print(BasketQuantity)
                                             BasketQuantity+=1
                                             print(BasketQuantity)
@@ -285,7 +288,7 @@ class Login(Screen):
 
                         
 
-                                IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName),background_color=green,color=Black)
+                                IndividualProduct=Button(size_hint=(0.2,0.1),pos_hint={'x':ProductPos_hintX,'y':ProductPos_hintY},text=str(ProductName+" "+"£"+str(ProductPrice)),background_color=green,color=Black)
                                 IndividualProduct.bind(on_press=ProductPress)
                                 ShopfrontScreen.add_widget(IndividualProduct)
                                 ProductPos_hintX+=0.2
@@ -340,7 +343,7 @@ class Login(Screen):
                 else: 
                     return UsernameAlreadyUse
                         
-            UsernameAlreadyUse=check()#function so commands below arent executed in a loop
+            UsernameAlreadyUse=check()#function so commands below arent executed in a loop makes sure username is not already used and returns either true or false
             print(UsernameAlreadyUse)
             #Insert hashes into database as hex digest as by defualt their datatype is not supported
             if UsernameAlreadyUse==False:
@@ -430,9 +433,7 @@ class PaymentScreen(Screen):
         DeliveryPostcode=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.0},text="Delivery Postcode")
         self.add_widget(DeliveryPostcode)
         
-        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
-        self.add_widget(HelpButton)
-
+     
         RememberButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.7},text="Remember my Payment information",background_color=green,color=Black)
         def RememberClick(self):
             cursor.execute("Select * from PaymentInfo Where UserID = (?)",str(UserIDStore[0]))
@@ -448,7 +449,7 @@ class PaymentScreen(Screen):
                 if len(SecurityCode.text)!=3:
                     SecurityCode.text="Incorrect Length"
                     return
-                print("working")
+           
                 if NumberChecker(CardNumber.text)==False:
                     CardNumber.text="Number Required"
                     return
@@ -587,7 +588,7 @@ class PaymentScreen(Screen):
             cursor.execute("Select Quantity,ProductName from Basket")
             Basket=cursor.fetchall()
             Products=""
-            for row in Basket:
+            for row in Basket:#takes all products in basket puts them into a variable and arranges them in correct format for orders table
                 Quantity=Decrypt(row[0],Key=KeyStore[0])
                 Product=Decrypt(row[1],Key=KeyStore[0])
                 QuantityAndProduct=Quantity+"x"+Product+","
@@ -599,10 +600,10 @@ class PaymentScreen(Screen):
 
             UserID=UserIDStore[0]
             EncryptedItems=Encrypt(Products,Key=KeyStore[0])
-            print(UserID)
-            cursor.execute("Insert into Orders (Items,DeliveryAddress,Postcode,UserID) Values(?,?,?,?)",(EncryptedItems,EncryptedDeliveryAddress,EncryptedPostcode,int(UserID)))
+         
+            cursor.execute("Insert into Orders (Items,DeliveryAddress,Postcode,UserID) Values(?,?,?,?)",(EncryptedItems,EncryptedDeliveryAddress,EncryptedPostcode,UserID))
             conn.commit()
-            CardNumber.text=""
+            CardNumber.text="Successful Purchase"
             SecurityCode.text=""
             BillingAddress.text=""
             Country.text=""
@@ -615,7 +616,7 @@ class PaymentScreen(Screen):
             
         PayButton.bind(on_press=PayButtonClick)   
         self.add_widget(PayButton)
-        #help button will be added later
+     
 
 class ViewBasket(Screen):
     def __init__(self, **kwargs):
@@ -625,8 +626,7 @@ class Shopfront(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
-        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.9,'y':0.9},text="Help",background_color=green,color=Black)#color is writing color background color is background
-        self.add_widget(HelpButton)
+        
         
         ShopfrontTitle=Label(text="Shopfront",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
         self.add_widget(ShopfrontTitle)
@@ -640,10 +640,13 @@ class Shopfront(Screen):
        
             cursor.execute("Select * From Basket")
             Basket=cursor.fetchall()
+            #deletes all widgets on screen and replaces every time viewbasket is pressed so it is constantly up to date
             ViewBasketScreen.clear_widgets() 
            
 
             ViewBasketScreen.layout=FloatLayout()
+           
+            
             ViewBasketTitle=Label(text="Basket View Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)
             ViewBasketScreen.add_widget(ViewBasketTitle)
 
@@ -661,22 +664,59 @@ class Shopfront(Screen):
             ViewBasketScreen.add_widget(Back)
 
             Ypos=0.8
-
+            Prices=[]
             for row in Basket:
                 #Decrypts products in basket so they can be show on screen
                 DecryptedProduct=Decrypt(row[0],Key=KeyStore[0])
+                print(DecryptedProduct)
                 DecryptedProductPrice=Decrypt(row[1],Key=KeyStore[0])
                 DecryptedQuantity=Decrypt(row[2],Key=KeyStore[0])
-           
-                Product=Label(text=DecryptedProduct+"X"+DecryptedQuantity+" Price=£"+DecryptedProductPrice,size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':Ypos},color=Black)
+                FloatDecryptedProductPrice=float(DecryptedProductPrice)
+                FloatDecryptedQuantity=float(DecryptedQuantity)
+                PriceTimesQuantity=FloatDecryptedProductPrice*FloatDecryptedQuantity#calculates price of all items of a certain category by multiplying their quantity by their price
+                Prices.append(PriceTimesQuantity)#puts all category prices into list 
+
+                Product=Label(text=DecryptedProduct+"X"+DecryptedQuantity+" Price=£"+str(PriceTimesQuantity),size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':Ypos},color=Black)
                 ViewBasketScreen.add_widget(Product)
+                
+                RemoveOne=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':Ypos},text="Remove One :"+DecryptedProduct,background_color=green,color=Black)
+                def RemoveOneClick(self):#takes quantity from basket table decrypts it and decreases by one each time button is pressed then encryptss and re adds
+                    Text=self.text
+                    TextSplit=Text.split(':')
+                    print(TextSplit[1])
+                    ProductName=TextSplit[1]
+                    EncodedProductName=ProductName.encode()
+                    HashedProductPressed=hashlib.sha3_512(EncodedProductName)
+                    cursor.execute("Select Quantity from Basket Where HashedProductName=(?)",(HashedProductPressed.hexdigest(),))
+                    EncryptedBasketQuantity=cursor.fetchone()
+                    DecryptedBasketQuantity=Decrypt(EncryptedBasketQuantity[0],Key=KeyStore[0])
+                    BasketQuantity=DecryptedBasketQuantity
+                    BasketQuantity=int(BasketQuantity)
+                    BasketQuantity-=1
+                    EncryptedQuantity2=Encrypt(BasketQuantity,Key=KeyStore[0])
+                    cursor.execute("Update Basket Set Quantity=? Where HashedProductName=?",(EncryptedQuantity2,HashedProductPressed.hexdigest()))
+                    conn.commit()
+                    ViewBasketClick(self)
+                    if BasketQuantity==0:#deletes row if product being decreased=0 uses hash to search for product
+                        print("Deleting")
+                        cursor.execute("Delete from Basket Where HashedProductName=(?)",(HashedProductPressed.hexdigest(),))
+                        conn.commit()
+                        ViewBasketClick(self)
+
+                RemoveOne.bind(on_press=RemoveOneClick)
+                ViewBasketScreen.add_widget(RemoveOne)
                 Ypos-=0.1
+            TotalPrice=sum(Prices)#adds together all prices in list to get a total price
+            StringTotalPrice=str(TotalPrice)
+            Total=Label(text="Total Price:£"+StringTotalPrice,size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.1},color=Black)
+            ViewBasketScreen.add_widget(Total)
+
 
         Viewbasket=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.9},text="ViewBasket",background_color=green,color=Black)
         Viewbasket.bind(on_press=ViewBasketClick)
         self.add_widget(Viewbasket)
 
-            #help button will be added later
+          
 
 class Manager(Screen):
     def __init__(self, **kwargs):
@@ -707,23 +747,22 @@ class AddOrRemoveUsers(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)     
         self.layout=FloatLayout()
-        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
-        self.add_widget(HelpButton)
+    
         
         RemoveUserTitle=Label(text="Remove User",size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.7},color=Black)
         self.add_widget(RemoveUserTitle)
 
-        UserIDInput=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.5})
+        UserIDInput=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.5},text="Enter a UserID")
         self.add_widget(UserIDInput)
         RemoveUser=Button(size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.3},text="Remove User",background_color=green,color=Black)
         def RemoveUserClick(self):
             UserID=UserIDInput.text
-            UserIDSearch=cursor.execute("Select*from UsersAndPasswords Where UserID=(?)",UserID)
+            UserIDSearch=cursor.execute("Select*from UsersAndPasswords Where UserID=(?)",(UserID,))
             #checks to see if id user has entered exists and if it does deletes that row of table
             if UserIDSearch==[]:
                 UserIDInput.text="Invalid UserID"
             else:
-                cursor.execute("Delete from UsersAndPasswords Where UserID=(?)",UserID)
+                cursor.execute("Delete from UsersAndPasswords Where UserID=(?)",(UserID,))
                 conn.commit()
                 UserIDInput.text="User Deleted"
 
@@ -736,28 +775,27 @@ class AddOrRemoveUsers(Screen):
         AddUserTitle=Label(text="Add User",size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.9},color=Black)
         self.add_widget(AddUserTitle)
 
-        UsernameInput=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.7})
-        self.add_widget(UsernameInput)
+        AddUserUsernameInput=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.7},text="Enter a Username")
+        self.add_widget(AddUserUsernameInput)
 
-        PasswordInput=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.5})
-        self.add_widget(PasswordInput)
+        AddUserPasswordInput=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.5},text="Enter a Password")
+        self.add_widget(AddUserPasswordInput)
         
-        UserTypeInput=Spinner(size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.3},values=('Manager','Staff'))
-        self.add_widget(UserTypeInput)
+        AddUserUserTypeInput=Spinner(size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.3},values=('Manager','Staff'),text="Access Level")
+        self.add_widget(AddUserUserTypeInput)
 
         AddUser=Button(size_hint=(0.2,0.1),pos_hint={'x':0.2,'y':0.1},text="Add User",background_color=green,color=Black)
         def AddUserClick(self):
-            Username=UsernameInput.text
-            Password=PasswordInput.text
-            UserType=UserTypeInput.text
+            Username=AddUserUsernameInput.text
+            Password=AddUserPasswordInput.text
+            UserType=AddUserUserTypeInput.text
             EncodedUsername=Username.encode()#To hash first encode then hash
             HashedUsername=hashlib.sha3_512(EncodedUsername)
             EncodedPassword=Password.encode()
             HashedPassword=hashlib.sha3_512(EncodedPassword)
             cursor.execute("Select Username from UsersAndPasswords")
             Usernames=cursor.fetchall()
-            print(Usernames)
-            def check():
+            def check():#makes sure username has not been used already and returns true or false depending outcome
                 UsernameAlreadyUse=False
                 if Usernames!=[]:
                     for row in Usernames:
@@ -772,20 +810,20 @@ class AddOrRemoveUsers(Screen):
                     return UsernameAlreadyUse
                         
             UsernameAlreadyUse=check()#function so commands below arent executed in a loop
-            print(UsernameAlreadyUse)
+            
             #Insert hashes into database as hex digest as by defualt their datatype is not supported
             if UsernameAlreadyUse==False:
-                salt=os.urandom(32)
+                salt=os.urandom(32)#generates a salt which is used to add a layer of randomness to the encryption and make sure each users data can never bet he same
                 cursor.execute("Insert into UsersAndPasswords (Username,Password,UserType,Salt)VALUES(?,?,?,?)",(HashedUsername.hexdigest(),HashedPassword.hexdigest(),UserType,salt))
                 conn.commit()
-                print("Adding")
+                AddUserUsernameInput.text="User Added"
             if UsernameAlreadyUse==True:
-                UsernameInput.text="Username Already Used"
+                AddUserUsernameInput.text="Username Already Used"
                 print("Not Adding")
             
-            UsernameInput.text=""
-            PasswordInput.text=""
-            UserTypeInput.text=""
+          
+            AddUserPasswordInput.text=""
+            AddUserUserTypeInput.text=""
         AddUser.bind(on_press=AddUserClick)
         self.add_widget(AddUser)
    
@@ -807,8 +845,7 @@ class AddOrRemoveProduct(Screen):
         super().__init__(**kw)     
         self.layout=FloatLayout()
 
-        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
-        self.add_widget(HelpButton)
+
         
         AddProductTitle=Label(text="Add Product",size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.9},color=Black)
         self.add_widget(AddProductTitle)
@@ -870,8 +907,7 @@ class Staff(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.layout=FloatLayout()
-        HelpButton=Button(size_hint=(0.2,0.1),pos_hint={'x':0.8,'y':0.0},text="Help",background_color=green,color=Black)#color is writing color background color is background
-        self.add_widget(HelpButton)
+    
 
         ViewOrders=Button(size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.5},text="ViewOrders",background_color=green,color=Black)
         def OrderViewScreen(self):
@@ -952,6 +988,6 @@ def main():
     PaperApp().run()
   
     cursor.execute("Drop Table Basket")
-
+    
     cursor.close()
 main()
