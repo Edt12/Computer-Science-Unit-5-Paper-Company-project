@@ -29,10 +29,11 @@ ProductsInBasket=[]
 UserIDStore=[]
 AccessLevel=[]
 
-DunderMifflinLogoPath='Dunder-Mifflin-Symbol.png'
+DirectoryPath=os.path.dirname(os.path.abspath(__file__))#gets directory path of the file
+DunderMifflinLogoPath=os.path.join(DirectoryPath,'Dunder-Mifflin-Symbol.png')
 #Creating Sqlite Database
-DatabaseDirectoryPath=os.path.dirname(os.path.abspath(__file__))#gets absolute path of the file
-DatabasePath=os.path.join(DatabaseDirectoryPath,'DunderMifflinDatabase.db')#joins the database to the absolute path of file to get absolute path of database
+
+DatabasePath=os.path.join(DirectoryPath,'DunderMifflinDatabase.db')#joins the database to the absolute path of directory to get absolute path of database
 conn=sqlite3.connect(DatabasePath)#connects to database 
 cursor=conn.cursor()#adds connection to cursor
 Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
