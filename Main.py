@@ -1,16 +1,18 @@
 import sqlite3
-from kivy.uix.screenmanager import ScreenManager, Screen,NoTransition #Kivy has screens not pop up windows so screen manage manager has different screens think of like switching between virtual desktops
-from kivy.app import App
-from kivy.uix.button import Button
-from kivy.uix.label import Label#import widgets such as buttons and labels 
-from kivy.uix.widget import Widget
-from kivy.uix.textinput import TextInput
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.stacklayout import StackLayout
-from kivy.lang import Builder
-from kivy.core.window import Window
-from kivy.uix.spinner import Spinner
-from kivy.uix.image import Image
+
+from Kivy1.kivy import *
+from Kivy1.kivy.uix.screenmanager import ScreenManager, Screen,NoTransition #Kivy has screens not pop up windows so screen manage manager has different screens think of like switching between virtual desktops
+from Kivy1.kivy.app import App
+from Kivy1.kivy.uix.button import Button
+from Kivy1.kivy.uix.label import Label#import widgets such as buttons and labels 
+from Kivy1.kivy.uix.widget import Widget
+from Kivy1.kivy.uix.textinput import TextInput
+from Kivy1.kivy.uix.floatlayout import FloatLayout
+from Kivy1.kivy.uix.stacklayout import StackLayout
+from Kivy1.kivy.lang import Builder
+from Kivy1.kivy.core.window import Window
+from Kivy1.kivy.uix.spinner import Spinner
+from Kivy1.kivy.uix.image import Image
 import os
 import base64
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
