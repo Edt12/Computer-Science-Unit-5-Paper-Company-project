@@ -28,8 +28,12 @@ ProductExistsOnScreen=[]
 ProductsInBasket=[]
 UserIDStore=[]
 AccessLevel=[]
+
+DunderMifflinLogoPath='Dunder-Mifflin-Symbol.png'
 #Creating Sqlite Database
-conn=sqlite3.connect("DunderMifflinDatabase.db")#connects to database 
+DatabaseDirectoryPath=os.path.dirname(os.path.abspath(__file__))#gets absolute path of the file
+DatabasePath=os.path.join(DatabaseDirectoryPath,'DunderMifflinDatabase.db')#joins the database to the absolute path of file to get absolute path of database
+conn=sqlite3.connect(DatabasePath)#connects to database 
 cursor=conn.cursor()#adds connection to cursor
 Screenmanager=ScreenManager()#Each Screen is called by screen manager which is used for commands which involve changing between screens
 #generates encryption key using Scrypt
@@ -104,7 +108,7 @@ def RefreshOrderView():
                 EncryptedDeliveryAddress=row[2]
                 EncryptedPostcode=row[3]
                 UserID=row[4]
-                #
+                
                 cursor.execute("Select Username from UsersAndPasswords Where UserID=(?)",str(UserID))
                 HashedHexedUsername=cursor.fetchone()
                 cursor.execute("Select Password from UsersAndPasswords Where UserID=(?)",str(UserID))
@@ -115,7 +119,7 @@ def RefreshOrderView():
                 #Taking all necessary data to make the encrytion key for the user then use it to decrypt their order
                 UsernameAndPassword=HashedHexedPassword[0]+HashedHexedUsername[0]
                 OrderEncryptionKey=GenerateKey(UsernameAndPassword=UsernameAndPassword,salt=Salt[0])
-                print(OrderEncryptionKey)
+            
                 #Decrypts items going to display from database
                 print("DeliveryAddress")
                 DeliveryAddress=Decrypt(EncryptedDeliveryAddress,Key=OrderEncryptionKey)
@@ -160,7 +164,7 @@ class Login(Screen):
         Window.clearcolor =(Grey)#sets background color for window to get value take each rgb value and divide by 255
         self.layout=FloatLayout()
         
-        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.6},size_hint=(0.4,0.4))
+        BackgroundImage=Image(source=DunderMifflinLogoPath,pos_hint={'x':0.0,'y':0.6},size_hint=(0.4,0.4))
         self.add_widget(BackgroundImage)
        
         UsernameEntry=TextInput(size_hint=(0.2,0.05),pos_hint={'x':0.4,'y':0.5})
@@ -191,7 +195,7 @@ class Login(Screen):
             if UsersAndPasswords!=[]:
                 for row in UsersAndPasswords:#goes through every row in UserAndPasswords Table
                     #compare inputed hashed username and password when they are in hexdigest form as that is how they are stored in database
-                    print("compare")
+                   
                 
                     if row[1]== HashedUsername.hexdigest() and row[2]== HashedPassword.hexdigest():#rows in sqlite can be referenced through a list e.g row 0 is first column ,row 1 is second column
                         print("Both Correct")#Username.text and Password.text are text from login input boxes
@@ -224,8 +228,7 @@ class Login(Screen):
                             return EncryptedData
                         cursor.execute("SELECT * from Products")
                         Table=cursor.fetchall()
-                        print(Table)
-                        print(Encrypt("Steve",Key=KeyStore[0]))
+              
                         for row in Table:
                             if UserType=="Customer":
                                 Screenmanager.current="Shopfront"
@@ -249,23 +252,22 @@ class Login(Screen):
                                         Text=self.text
                                         TextSplit=Text.split("£")#Turns text into a list with each item being before or after £ sign
                                         ProductPressed=TextSplit[0]#First part of text is name so that becomes productpressed
-                                        print(ProductPressed)
-                                    
+                                  
                                         EncryptedProductPressed=Encrypt(ProductPressed,Key=KeyStore[0])
                                         ProductPressed=ProductPressed.encode()#encodes before hash as hash functions only take encoded text
                                         HashedProductPressed=hashlib.sha3_512(ProductPressed)
                                         cursor.execute("Select Quantity from Basket Where HashedProductName=(?)",(HashedProductPressed.hexdigest(),))
                                         EncryptedBasketQuantity=cursor.fetchone()#Using Hash function to search through database to get quantity
-                                        print(EncryptedBasketQuantity)
+                                    
                                         if EncryptedBasketQuantity!=None:
                                             #Finding Quantity of item in database and then updating it so it can be displayed in basket       
                                             DecryptedBasketQuantity=Decrypt(EncryptedBasketQuantity[0],Key=KeyStore[0])
                                             BasketQuantity=DecryptedBasketQuantity.decode()
                                             BasketQuantity=int(BasketQuantity)
                                             print("Successful decryption")
-                                            print(BasketQuantity)
+                                        
                                             BasketQuantity+=1
-                                            print(BasketQuantity)
+                                    
                                             EncryptedQuantity2=Encrypt(BasketQuantity,Key=KeyStore[0])
                                             cursor.execute("Update Basket Set Quantity=? Where HashedProductName=?",(EncryptedQuantity2,HashedProductPressed.hexdigest()))
                                             conn.commit()
@@ -328,12 +330,12 @@ class Login(Screen):
             UserType="Customer"#all accounts made this way will be customer level access as higher levels only made by managers
             cursor.execute("Select Username from UsersAndPasswords")
             Usernames=cursor.fetchall()
-            print(Usernames)
-            def check():
+        
+            def check():#checks that Username is not already in use
                 UsernameAlreadyUse=False
                 if Usernames!=[]:
                     for row in Usernames:
-                        print("rowing")
+                      
                         if HashedUsername.hexdigest()==row[0]:
                             print("Checking")
                             UsernameAlreadyUse=True
@@ -342,9 +344,12 @@ class Login(Screen):
                              return UsernameAlreadyUse
                 else: 
                     return UsernameAlreadyUse
-                        
-            UsernameAlreadyUse=check()#function so commands below arent executed in a loop makes sure username is not already used and returns either true or false
-            print(UsernameAlreadyUse)
+            if CustomerUsername!="" and CustomerPassword!="":
+                UsernameAlreadyUse=check()#function so commands below arent executed in a loop makes sure username is not already used and returns either true or false
+                print(UsernameAlreadyUse)
+            else:
+                UsernameAlreadyUse==True
+
             #Insert hashes into database as hex digest as by defualt their datatype is not supported
             if UsernameAlreadyUse==False:
                 salt=os.urandom(32)
@@ -364,13 +369,11 @@ class Login(Screen):
 
 
 def Decrypt(Data,Key):
-    print(Data)
     cipher=Fernet(Key)
     DecryptedData=cipher.decrypt(Data)
     return DecryptedData.decode('utf-8')
                         
 def Encrypt(Data,Key):
-    print(Data)
     cipher=Fernet(Key)
     Data=str(Data)
     DataBytes=bytes(Data,'utf-8')
@@ -385,7 +388,7 @@ class PaymentScreen(Screen):
         
         self.layout=FloatLayout()#Float Layout is a layout in which widgets by defualt are not postioned
         
-        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.0},size_hint=(0.4,0.4))
+        BackgroundImage=Image(source=DunderMifflinLogoPath,pos_hint={'x':0.0,'y':0.0},size_hint=(0.4,0.4))
         self.add_widget(BackgroundImage)
        
         PaymentScreenTitle=Label(text="Payment Screen",size_hint=(0.2,0.1),pos_hint={'x':0.4,'y':0.9},color=Black)#Size_hint is size relative to screen size pos_hint is position relative to screen size e.g 0.1=one tenth
@@ -394,6 +397,7 @@ class PaymentScreen(Screen):
         Back=Button(size_hint=(0.2,0.1),pos_hint={'x':0.0,'y':0.9},text="Back",background_color=green,color=Black)#color is writing color background color is background
         def BackClick(self):
             Screenmanager.current="Shopfront"
+
         Back.bind(on_press=BackClick)#binds a function to happen when a button is pressed
         self.add_widget(Back)
 
@@ -438,19 +442,24 @@ class PaymentScreen(Screen):
         def RememberClick(self):
             cursor.execute("Select * from PaymentInfo Where UserID = (?)",str(UserIDStore[0]))
             PaymentInfoStored=cursor.fetchall()
+            DeliveryPostCodeText=DeliveryPostcode.text
+            DeliveryPostCodeTextSpacesRemoved=DeliveryPostCodeText.replace(" ","")
+            CardNumberText=CardNumber.text
+            CardNumberTextSpacesRemoved=CardNumberText.replace(" ","")
+            
             if PaymentInfoStored==[]:
                 ExpirationDate=ExpirationMonth.text+"/"+ ExpirationYear.text
                 #validation checks
                 if ExpirationDate=="/":
                         return
-                if len(CardNumber.text)!=16:
+                if len(CardNumberTextSpacesRemoved)!=16:
                     CardNumber.text="Incorrect Length"
                     return
                 if len(SecurityCode.text)!=3:
                     SecurityCode.text="Incorrect Length"
                     return
            
-                if NumberChecker(CardNumber.text)==False:
+                if NumberChecker(CardNumberTextSpacesRemoved)==False:
                     CardNumber.text="Number Required"
                     return
                 
@@ -462,11 +471,11 @@ class PaymentScreen(Screen):
                     EmailAddress.text="Invalid Email Address"
                     return
             
-                if len(DeliveryPostcode.text)!=6:
+                if len(DeliveryPostCodeTextSpacesRemoved)!=6:
                     DeliveryPostcode.text="Incorrect Length"
                     return
 
-                if CardNumber.text=="":
+                if CardNumberTextSpacesRemoved=="":
                     CardNumber.text="Required"
                     return
        
@@ -474,7 +483,7 @@ class PaymentScreen(Screen):
                     SecurityCode.text="Required"
                     return
             
-                if DeliveryPostcode.text=="":
+                if DeliveryPostCodeTextSpacesRemoved=="":
                     DeliveryPostcode.text="Required"
                     return
            
@@ -535,17 +544,20 @@ class PaymentScreen(Screen):
         PayButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.8},text="Pay",background_color=green,color=Black)
         def PayButtonClick(self):
             ExpirationDate=ExpirationMonth.text+"/"+ ExpirationYear.text#taking expiration date from month and year widgets
-            
+            DeliveryPostCodeText=DeliveryPostcode.text
+            DeliveryPostCodeTextSpacesRemoved=DeliveryPostCodeText.replace(" ","")
+            CardNumberText=CardNumber.text
+            CardNumberTextSpacesRemoved=CardNumberText.replace(" ","")
             #Validation Checks
             if ExpirationDate=="/":
                 return
-            if len(CardNumber.text)!=16:
+            if len(CardNumberTextSpacesRemoved)!=16:
                 CardNumber.text="Incorrect Length"
                 return
             if len(SecurityCode.text)!=3:
                 SecurityCode.text="Incorrect Length"
                 return
-            if NumberChecker(CardNumber.text)==False:
+            if NumberChecker(CardNumberTextSpacesRemoved)==False:
                 CardNumber.text="Number Required"
                 return
                 
@@ -556,11 +568,11 @@ class PaymentScreen(Screen):
             if EmailAddressValid(EmailAddress)==False:
                 return
 
-            if len(DeliveryPostcode.text)!=6:
-                DeliveryPostcode.text!="Incorrect Length"
+            if len(DeliveryPostCodeTextSpacesRemoved)!=6:
+                DeliveryPostcode.text="Incorrect Length"
                 return
 
-            if CardNumber.text=="":
+            if CardNumberTextSpacesRemoved=="":
                 CardNumber.text="Required"
                 return
 
@@ -568,7 +580,7 @@ class PaymentScreen(Screen):
                 SecurityCode.text="Required"
                 return
     
-            if DeliveryPostcode.text=="":
+            if DeliveryPostCodeTextSpacesRemoved=="":
                 DeliveryPostcode.text="Required"
                 return
 
@@ -593,7 +605,7 @@ class PaymentScreen(Screen):
                 Product=Decrypt(row[1],Key=KeyStore[0])
                 QuantityAndProduct=Quantity+"x"+Product+","
                 Products=Products+QuantityAndProduct
-                print(Products)
+              
           
 
 
@@ -632,7 +644,7 @@ class Shopfront(Screen):
         self.add_widget(ShopfrontTitle)
         ViewBasketScreen=Screenmanager.get_screen("ViewBasket")
          
-        BackgroundImage=Image(source="Dunder-Mifflin-Symbol.png",pos_hint={'x':0.0,'y':0.8},size_hint=(0.2,0.2))
+        BackgroundImage=Image(source=DunderMifflinLogoPath,pos_hint={'x':0.0,'y':0.8},size_hint=(0.2,0.2))
         self.add_widget(BackgroundImage)
 
         def ViewBasketClick(self):
@@ -668,7 +680,6 @@ class Shopfront(Screen):
             for row in Basket:
                 #Decrypts products in basket so they can be show on screen
                 DecryptedProduct=Decrypt(row[0],Key=KeyStore[0])
-                print(DecryptedProduct)
                 DecryptedProductPrice=Decrypt(row[1],Key=KeyStore[0])
                 DecryptedQuantity=Decrypt(row[2],Key=KeyStore[0])
                 FloatDecryptedProductPrice=float(DecryptedProductPrice)
@@ -683,7 +694,7 @@ class Shopfront(Screen):
                 def RemoveOneClick(self):#takes quantity from basket table decrypts it and decreases by one each time button is pressed then encryptss and re adds
                     Text=self.text
                     TextSplit=Text.split(':')
-                    print(TextSplit[1])
+            
                     ProductName=TextSplit[1]
                     EncodedProductName=ProductName.encode()
                     HashedProductPressed=hashlib.sha3_512(EncodedProductName)
@@ -754,6 +765,7 @@ class AddOrRemoveUsers(Screen):
 
         UserIDInput=TextInput(size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.5},text="Enter a UserID")
         self.add_widget(UserIDInput)
+
         RemoveUser=Button(size_hint=(0.2,0.1),pos_hint={'x':0.6,'y':0.3},text="Remove User",background_color=green,color=Black)
         def RemoveUserClick(self):
             UserID=UserIDInput.text
@@ -989,5 +1001,6 @@ def main():
   
     cursor.execute("Drop Table Basket")
     
+
     cursor.close()
 main()
