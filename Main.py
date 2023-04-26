@@ -1001,7 +1001,6 @@ def main():
     PaperApp().run()
   
     cursor.execute("Drop Table Basket")
-    
 
     cursor.close()
 main()
