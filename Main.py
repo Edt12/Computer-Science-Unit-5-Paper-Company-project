@@ -109,12 +109,12 @@ def RefreshOrderView():
                 EncryptedDeliveryAddress=row[2]
                 EncryptedPostcode=row[3]
                 UserID=row[4]
-                
-                cursor.execute("Select Username from UsersAndPasswords Where UserID=(?)",str(UserID))
+                StringUserID=UserID
+                cursor.execute("Select Username from UsersAndPasswords Where UserID=(?)",(StringUserID,))
                 HashedHexedUsername=cursor.fetchone()
-                cursor.execute("Select Password from UsersAndPasswords Where UserID=(?)",str(UserID))
+                cursor.execute("Select Password from UsersAndPasswords Where UserID=(?)",(StringUserID,))
                 HashedHexedPassword=cursor.fetchone()
-                cursor.execute("Select Salt from UsersAndPasswords Where UserID=(?)",str(UserID))
+                cursor.execute("Select Salt from UsersAndPasswords Where UserID=(?)",(StringUserID,))
                 Salt=cursor.fetchone()
                 
                 #Taking all necessary data to make the encrytion key for the user then use it to decrypt their order
@@ -227,6 +227,7 @@ class Login(Screen):
                             DataBytes=bytes(Data, 'utf-8')
                             EncryptedData=cipher.encrypt(DataBytes)
                             return EncryptedData
+                        
                         cursor.execute("SELECT * from Products")
                         Table=cursor.fetchall()
               
@@ -237,7 +238,7 @@ class Login(Screen):
 
                                 ProductName=row[0]
                                 ProductPrice=row[1]
-                        
+                                
                         
 
                                 def ProductPress(self):
@@ -324,45 +325,61 @@ class Login(Screen):
         def AddCustomer(self):
             CustomerUsername=UsernameEntry.text
             CustomerPassword=PasswordEntry.text
-            EncodedUsername=CustomerUsername.encode()#To hash first encode then hash
-            HashedUsername=hashlib.sha3_512(EncodedUsername)
-            EncodedPassword=CustomerPassword.encode()
-            HashedPassword=hashlib.sha3_512(EncodedPassword)
-            UserType="Customer"#all accounts made this way will be customer level access as higher levels only made by managers
-            cursor.execute("Select Username from UsersAndPasswords")
-            Usernames=cursor.fetchall()
-        
-            def check():#checks that Username is not already in use
-                UsernameAlreadyUse=False
-                if Usernames!=[]:
-                    for row in Usernames:
-                      
-                        if HashedUsername.hexdigest()==row[0]:
-                            print("Checking")
-                            UsernameAlreadyUse=True
-                            return UsernameAlreadyUse
-                        else:
-                             return UsernameAlreadyUse
-                else: 
-                    return UsernameAlreadyUse
-            if CustomerUsername!="" and CustomerPassword!="":
-                UsernameAlreadyUse=check()#function so commands below arent executed in a loop makes sure username is not already used and returns either true or false
-                print(UsernameAlreadyUse)
-            else:
-                UsernameAlreadyUse==True
+            CustomerUsernameSpacesRemoved=CustomerUsername.replace(" ","")
+            CustomerPasswordSpacesRemoved=CustomerPassword.replace(" ","")
+            if CustomerUsernameSpacesRemoved!="" and CustomerPasswordSpacesRemoved!="":
 
-            #Insert hashes into database as hex digest as by defualt their datatype is not supported
-            if UsernameAlreadyUse==False:
-                salt=os.urandom(32)
-                cursor.execute("Insert into UsersAndPasswords (Username,Password,UserType,Salt)VALUES(?,?,?,?)",(HashedUsername.hexdigest(),HashedPassword.hexdigest(),UserType,salt))
-                conn.commit()
-                print("Adding")
-            if UsernameAlreadyUse==True:
-                UsernameEntry.text="Username Already Used"
-                print("Not Adding")
+                EncodedUsername=CustomerUsername.encode()#To hash first encode then hash
+                HashedUsername=hashlib.sha3_512(EncodedUsername)
+                EncodedPassword=CustomerPassword.encode()
+                HashedPassword=hashlib.sha3_512(EncodedPassword)
+                UserType="Customer"#all accounts made this way will be customer level access as higher levels only made by managers
+                cursor.execute("Select Username from UsersAndPasswords")
+                Usernames=cursor.fetchall()
+         
+
+                def check():#checks that Username is not already in use
+                    UsernameAlreadyUse=False
+                    if Usernames!=[]:
+                        Index=len(Usernames)
+                        RowNumber=0
+                        for row in Usernames:
+                            RowNumber+=1
+                            
+                            if HashedUsername.hexdigest()==row[0]:
+                                print("Checking")
+                                UsernameAlreadyUse=True
+                            if RowNumber==Index:
+                                return UsernameAlreadyUse
+                               
+                        
+                    else: 
+                        return UsernameAlreadyUse
+
+                UsernameAlreadyUse=check()#function so commands below arent executed in a loop makes sure username is not already used and returns either true or false
+
+
+                #Insert hashes into database as hex digest as by defualt their datatype is not supported
+                if UsernameAlreadyUse==False:
+                    salt=os.urandom(32)
+                    cursor.execute("Insert into UsersAndPasswords (Username,Password,UserType,Salt)VALUES(?,?,?,?)",(HashedUsername.hexdigest(),HashedPassword.hexdigest(),UserType,salt))
+                    conn.commit()
+                    UsernameEntry.text=""
+                    PasswordEntry.text=""
+                    UsernameEntry.text="Added User"
+                    print("Adding")
+
+                if UsernameAlreadyUse==True:
+                    UsernameEntry.text=""
+                    PasswordEntry.text=""
+                    UsernameEntry.text="Already in Use"
+                    print("Not Adding")
             
-            UsernameEntry.text=""
-            PasswordEntry.text=""
+                
+            else:
+                UsernameEntry.text="Missing Input"
+                print("Missing Input")
+                
         AddNewCustomer.bind(on_press=AddCustomer)
         self.add_widget(AddNewCustomer)
         LoginTitle=Label(text="Please Enter Your Username and Password",size_hint=(0.1,0.05),pos_hint={'x':0.5,'y':0.6},color=Black)
@@ -441,7 +458,8 @@ class PaymentScreen(Screen):
      
         RememberButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.7},text="Remember my Payment information",background_color=green,color=Black)
         def RememberClick(self):
-            cursor.execute("Select * from PaymentInfo Where UserID = (?)",str(UserIDStore[0]))
+            StringUserID=str(UserIDStore[0])
+            cursor.execute("Select * from PaymentInfo Where UserID = (?)",(StringUserID,))
             PaymentInfoStored=cursor.fetchall()
             DeliveryPostCodeText=DeliveryPostcode.text
             DeliveryPostCodeTextSpacesRemoved=DeliveryPostCodeText.replace(" ","")
@@ -506,16 +524,27 @@ class PaymentScreen(Screen):
                 EncryptedBillingAddress=Encrypt(BillingAddress.text,Key=KeyStore[0])
                 cursor.execute("Insert Into PaymentInfo(UserID,CardNumber,SecurityCode,ExpirationDate,BillingAddress,Postcode,EmailAddress) Values(?,?,?,?,?,?,?)",(UserIDStore[0],EncryptedCardNumber,EncryptedSecurityCode,EncryptedExpirationDate,EncryptedPostcode,EncryptedBillingAddress,EncryptedEmailAddress))
                 conn.commit()
+                CardNumber.text="Payment Info Added"
+                SecurityCode.text=""
+                ExpirationMonth.text=""
+                ExpirationYear.text=""
+                BillingAddress.text=""
+                Postcode.text=""
+                EmailAddress.text=""
+                Country.text=""
+                DeliveryAddress.text=""
+                DeliveryPostcode.text=""
                 print("Payment info added to database")
             else:#each customer can only have one set of payment information saved and this stops them from adding more than one
+               
                print("Wrong")
         RememberButton.bind(on_press=RememberClick)
         self.add_widget(RememberButton)
 
         AutofillButton=Button(size_hint=(0.3,0.05),pos_hint={'x':0.7,'y':0.6},text="Autofill",background_color=green,color=Black)
         def AutofillClick(self):
-
-            cursor.execute("Select*from PaymentInfo Where UserID=(?)",str(UserIDStore[0]))#fetches payment info for specifc customer using their customer id
+            StringUserID=str(UserIDStore[0])
+            cursor.execute("Select*from PaymentInfo Where UserID=(?)",(StringUserID,))#fetches payment info for specifc customer using their customer id
             PaymentInformation=cursor.fetchall()
             for row in PaymentInformation:
                 #Goes through customer payment info and decrypts it using their encryption key
@@ -802,41 +831,52 @@ class AddOrRemoveUsers(Screen):
             Username=AddUserUsernameInput.text
             Password=AddUserPasswordInput.text
             UserType=AddUserUserTypeInput.text
-            EncodedUsername=Username.encode()#To hash first encode then hash
-            HashedUsername=hashlib.sha3_512(EncodedUsername)
-            EncodedPassword=Password.encode()
-            HashedPassword=hashlib.sha3_512(EncodedPassword)
-            cursor.execute("Select Username from UsersAndPasswords")
-            Usernames=cursor.fetchall()
-            def check():#makes sure username has not been used already and returns true or false depending outcome
-                UsernameAlreadyUse=False
-                if Usernames!=[]:
-                    for row in Usernames:
-                        print("rowing")
-                        if HashedUsername.hexdigest()==row[0]:
-                            print("Checking")
-                            UsernameAlreadyUse=True
-                            return UsernameAlreadyUse
-                        else:
-                             return UsernameAlreadyUse
-                else: 
-                    return UsernameAlreadyUse
+            UsernameSpacesRemoved=Username.replace(" ","")
+            PasswordSpacesRemoved=Password.replace(" ","")
+            if UsernameSpacesRemoved!="" and PasswordSpacesRemoved!="" and UserType!="Access Level":
+
+                EncodedUsername=Username.encode()#To hash first encode then hash
+                HashedUsername=hashlib.sha3_512(EncodedUsername)
+                EncodedPassword=Password.encode()
+                HashedPassword=hashlib.sha3_512(EncodedPassword)
+                cursor.execute("Select Username from UsersAndPasswords")
+                Usernames=cursor.fetchall()
+                def check():#makes sure username has not been used already and returns true or false depending outcome
+                    UsernameAlreadyUse=False
+                    if Usernames!=[]:
+                        Index=len(Usernames)
+                        RowNumber=0
+                        for row in Usernames:
+                            RowNumber+=1
+                            
+                            if HashedUsername.hexdigest()==row[0]:
+                                print("Checking")
+                                UsernameAlreadyUse=True
+                            if RowNumber==Index:
+                                return UsernameAlreadyUse
+                
+                    else: 
+                        return UsernameAlreadyUse
                         
-            UsernameAlreadyUse=check()#function so commands below arent executed in a loop
+                UsernameAlreadyUse=check()#function so commands below arent executed in a loop
             
-            #Insert hashes into database as hex digest as by defualt their datatype is not supported
-            if UsernameAlreadyUse==False:
-                salt=os.urandom(32)#generates a salt which is used to add a layer of randomness to the encryption and make sure each users data can never bet he same
-                cursor.execute("Insert into UsersAndPasswords (Username,Password,UserType,Salt)VALUES(?,?,?,?)",(HashedUsername.hexdigest(),HashedPassword.hexdigest(),UserType,salt))
-                conn.commit()
-                AddUserUsernameInput.text="User Added"
-            if UsernameAlreadyUse==True:
-                AddUserUsernameInput.text="Username Already Used"
-                print("Not Adding")
+                #Insert hashes into database as hex digest as by defualt their datatype is not supported
+                if UsernameAlreadyUse==False:
+                    salt=os.urandom(32)#generates a salt which is used to add a layer of randomness to the encryption and make sure each users data can never bet he same
+                    cursor.execute("Insert into UsersAndPasswords (Username,Password,UserType,Salt)VALUES(?,?,?,?)",(HashedUsername.hexdigest(),HashedPassword.hexdigest(),UserType,salt))
+                    conn.commit()
+                    AddUserUsernameInput.text="User Added"
+                if UsernameAlreadyUse==True:
+                    AddUserUsernameInput.text="Username Already Used"
+                    print("Not Adding")
             
           
-            AddUserPasswordInput.text=""
-            AddUserUserTypeInput.text=""
+                AddUserPasswordInput.text=""
+                AddUserUserTypeInput.text=""
+            else:
+                AddUserUsernameInput.text="Missing Input"
+                print("Missing Input")
+                
         AddUser.bind(on_press=AddUserClick)
         self.add_widget(AddUser)
    
@@ -1001,6 +1041,5 @@ def main():
     PaperApp().run()
   
     cursor.execute("Drop Table Basket")
-
     cursor.close()
 main()
