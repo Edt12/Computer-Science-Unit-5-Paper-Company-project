@@ -2,14 +2,14 @@
 My final A level Computer Science Project 
 An app where users can buy or sell paper intended to have similar functionality to something like amazon
 
-NOTE-Does not take in or charge actual credit cards 
+NOTE-Does not charge actual credit cards 
 
-IMPORTANT
+**IMPORTANT**
 
 DO NOT INPUT REAL PAYMENT INFORMATION -While I beleive this to be at least reasonably secure I cannot guarantee this therefore 
 do not enter real payment information in this app for any reason
 
-Main Features
+**Main Features**
 
 Can buy and sell paper
 
@@ -28,6 +28,8 @@ Has autofill payment info
 Hierachy of access
 
 Managers can remove staff accounts
+
+**Screenshots**
 
 Login Sceen
 
