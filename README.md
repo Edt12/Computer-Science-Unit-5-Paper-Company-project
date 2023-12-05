@@ -4,6 +4,11 @@ An app where users can buy or sell paper intended to have similar functionality 
 
 NOTE-Does not take in or charge actual credit cards 
 
+IMPORTANT
+
+DO NOT INPUT REAL PAYMENT INFORMATION -While I beleive this to be at least reasonably secure I cannot guarantee this therefore 
+do not enter real payment information in this app for any reason
+
 Main Features
 
 Can buy and sell paper
