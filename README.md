@@ -20,7 +20,7 @@ Secure Login System Uses SHA3_512 to hash usernames and passwords
 
 Has autofill payment info
 
-Heirachy of access
+Hierachy of access
 
 Managers can remove staff accounts
 
