@@ -2,7 +2,7 @@
 My final A level Computer Science Project 
 An app where users can buy or sell paper intended to have similar functionality to something like amazon
 
-NOTE-Does not take in actual credit cards 
+NOTE-Does not take in or charge actual credit cards 
 
 Main Features
 
