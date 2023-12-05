@@ -29,6 +29,9 @@ Hierachy of access
 
 Managers can remove staff accounts
 
+**Known Bugs**
+When multiple types of product are selected it has been known to add up the total wrong in the basket section
+
 **Screenshots**
 
 Login Sceen
